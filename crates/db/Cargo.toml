@@ -1,0 +1,14 @@
+[package]
+name = "db"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+description = "Database access, migrations, and repositories for Klyster"
+
+[lints]
+workspace = true
+
+[dependencies]

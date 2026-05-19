@@ -1,4 +1,4 @@
-# CapPlan
+# Klyster
 
 > Capacity planning application for Kubernetes and VMs with ML-powered forecasting
 
@@ -18,9 +18,9 @@
 
 ---
 
-## What is CapPlan?
+## What is Klyster?
 
-CapPlan analyzes infrastructure metrics and provides intelligent scaling recommendations:
+Klyster analyzes infrastructure metrics and provides intelligent scaling recommendations:
 
 - 📊 **Collect** metrics from Prometheus or built-in agents
 - 🤖 **Analyze** trends using predefined or custom Python functions
@@ -34,7 +34,7 @@ CapPlan analyzes infrastructure metrics and provides intelligent scaling recomme
 
 ```
 ┌──────────────────────────────────────────────┐
-│                capplan binary                 │
+│                klyster binary                 │
 ├────────┬─────────┬─────────┬─────────────────┤
 │   UI   │   Web   │  Agent  │   Core + DB     │
 │(embed) │ (axum)  │ (coll.) │ (sqlx+migrate)  │
@@ -96,7 +96,7 @@ CapPlan analyzes infrastructure metrics and provides intelligent scaling recomme
 ```bash
 # Clone
 git clone <repo-url>
-cd capplan
+cd klyster
 
 # Build (after CP-M1-001)
 cargo build

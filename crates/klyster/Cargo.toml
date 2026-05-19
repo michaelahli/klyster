@@ -1,0 +1,23 @@
+[package]
+name = "klyster"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+description = "Capacity planning application for Kubernetes and VM workloads"
+
+[lints]
+workspace = true
+
+[dependencies]
+domain.workspace = true
+db.workspace = true
+web.workspace = true
+agent.workspace = true
+analytics.workspace = true
+
+anyhow.workspace = true
+tokio.workspace = true
+tracing.workspace = true
