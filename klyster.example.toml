@@ -1,0 +1,106 @@
+# Klyster Configuration Example
+# Copy to klyster.toml and customize
+
+[database]
+# Database type: "sqlite" or "postgres"
+db_type = "sqlite"
+
+# SQLite database file path (used when db_type = "sqlite")
+sqlite_path = "./data/klyster.db"
+
+# PostgreSQL connection URL (required when db_type = "postgres")
+# postgres_url = "postgresql://user:password@localhost:5432/klyster"
+
+# Connection pool size
+pool_size = 10
+
+# Enable SQLite WAL mode (recommended for better concurrency)
+wal_mode = true
+
+[web]
+# Server bind address
+host = "127.0.0.1"
+
+# Server port
+port = 8080
+
+# Number of worker threads (defaults to number of CPU cores)
+# workers = 4
+
+[agent]
+# Enable agent for metrics collection
+enabled = false
+
+# Collection interval in seconds
+collection_interval_secs = 60
+
+[analytics]
+# Enable analytics engine
+enabled = false
+
+# gRPC endpoint for Python analytics sidecar
+grpc_endpoint = "http://127.0.0.1:50051"
+
+[logging]
+# Log format: "json", "logfmt", or "text"
+format = "json"
+
+# Log level: "trace", "debug", "info", "warn", or "error"
+level = "info"
+
+# Log outputs (can have multiple)
+[[logging.outputs]]
+type = "stdout"
+
+# Example: File output with rotation
+# [[logging.outputs]]
+# type = "file"
+# path = "/var/log/klyster/app.log"
+# rotation = "daily"  # "daily", "hourly", or "size"
+# retention_days = 30
+
+# Example: Separate audit log
+# [[logging.outputs]]
+# type = "file"
+# path = "/var/log/klyster/audit.log"
+# rotation = "daily"
+# retention_days = 365
+# filter = "audit"  # Only audit logs
+
+# Example: Syslog output
+# [[logging.outputs]]
+# type = "syslog"
+# address = "localhost:514"
+
+[telemetry]
+# Enable OpenTelemetry tracing
+enabled = false
+
+# Exporter type: "otlp", "jaeger", "zipkin", or "stdout"
+exporter = "otlp"
+
+# Exporter endpoint
+endpoint = "http://localhost:4317"
+
+# Service name for traces
+service_name = "klyster"
+
+# Sampling rate (0.0 to 1.0)
+sample_rate = 1.0
+
+[metrics]
+# Enable Prometheus metrics endpoint
+enabled = true
+
+# Metrics endpoint path
+endpoint = "/metrics"
+
+[retention]
+# Data retention periods (in days)
+metrics_days = 90
+forecasts_days = 180
+recommendations_days = 365
+audit_logs_days = 365
+
+# Cleanup job schedule (cron format)
+cleanup_schedule = "0 2 * * *"  # Daily at 02:00 UTC
