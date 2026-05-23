@@ -6,6 +6,8 @@ pub mod error;
 pub mod migrate;
 /// Database connection pool abstraction.
 pub mod pool;
+/// Repository implementations for data access.
+pub mod repositories;
 
 pub use error::{DbError, DbResult};
 pub use migrate::run_migrations;

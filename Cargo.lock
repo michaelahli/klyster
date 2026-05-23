@@ -375,6 +375,7 @@ dependencies = [
 name = "db"
 version = "0.1.0"
 dependencies = [
+ "chrono",
  "domain",
  "sqlx",
  "thiserror 1.0.69",

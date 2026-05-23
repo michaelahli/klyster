@@ -15,5 +15,6 @@ workspace = true
 domain.workspace = true
 thiserror.workspace = true
 tracing.workspace = true
-sqlx = { version = "0.8", features = ["runtime-tokio", "sqlite", "postgres"] }
+sqlx = { version = "0.8", features = ["runtime-tokio", "sqlite", "postgres", "chrono"] }
 tokio.workspace = true
+chrono = { version = "0.4", features = ["serde"] }
