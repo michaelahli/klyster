@@ -1,0 +1,2 @@
+-- Initial migration placeholder
+-- This migration creates the migration tracking table (handled by sqlx automatically)
