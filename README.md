@@ -1,132 +1,73 @@
 # Klyster
 
-> Capacity planning application for Kubernetes and VMs with ML-powered forecasting
+**Capacity Planning Application for Kubernetes and VM Workloads**
 
-**Status**: 🚧 Planning Complete, Implementation Starting
+Klyster is a capacity planning tool that analyzes infrastructure metrics, forecasts resource usage, and provides intelligent scaling recommendations for your Kubernetes clusters and VM environments.
 
----
+## Features
 
-## Quick Start for Contributors
+- **Metric Collection**: Prometheus integration and agent-based collection
+- **Forecasting**: Time-series prediction using multiple models (ARIMA, linear regression, seasonal decomposition)
+- **Smart Recommendations**: Automated scaling suggestions based on predicted capacity needs
+- **Flexible Deployment**: Single binary with SQLite or distributed with PostgreSQL
+- **Observability**: Built-in metrics, structured logging, and distributed tracing
+- **High Availability**: Stateless design for horizontal scaling
 
-**New to this project?** Start here:
+## Quick Start
 
-1. Read [`docs/PROJECT_STATE.md`](docs/PROJECT_STATE.md) — current state and next steps
-2. Review [`docs/PRD.md`](docs/PRD.md) — product requirements
-3. Check [`docs/tickets/README.md`](docs/tickets/README.md) — implementation tickets
+### Installation
 
-**Resuming work?** Go straight to [`docs/PROJECT_STATE.md`](docs/PROJECT_STATE.md)
+```bash
+git clone https://github.com/klyster/klyster.git
+cd klyster
 
----
+cp klyster.postgres.toml klyster.toml
 
-## What is Klyster?
+cargo build --release
 
-Klyster analyzes infrastructure metrics and provides intelligent scaling recommendations:
+./target/release/klyster
+```
 
-- 📊 **Collect** metrics from Prometheus or built-in agents
-- 🤖 **Analyze** trends using predefined or custom Python functions
-- 📈 **Forecast** resource needs (days, weeks, months ahead)
-- ✅ **Recommend** scaling actions with confidence scores
-- 🎯 **Approve** recommendations via web UI
+## Usage
 
----
+### Run All Components
+
+```bash
+klyster
+```
+
+### Run Specific Components
+
+```bash
+# Web API only
+klyster --web
+
+# Agent only
+klyster --agent
+
+# Analytics only
+klyster --analytics
+```
+
+### Configuration
+
+See `klyster.example.toml` for full configuration options.
 
 ## Architecture
 
-```
-┌──────────────────────────────────────────────┐
-│                klyster binary                 │
-├────────┬─────────┬─────────┬─────────────────┤
-│   UI   │   Web   │  Agent  │   Core + DB     │
-│(embed) │ (axum)  │ (coll.) │ (sqlx+migrate)  │
-└────────┴────┬────┴─────────┴────────┬────────┘
-              │                        │
-              │ HTTP API               │ gRPC
-              │                        │
-         Clients              ┌────────▼─────────┐
-                              │ Python Analytics  │
-                              │ (sidecar process) │
-                              └──────────────────┘
-```
+Klyster is built as a modular monolith with the following components:
 
-**Tech Stack**:
-- Rust (core, web, agent)
-- Python 3.11+ (analytics)
-- SQLite / PostgreSQL
-- axum, sqlx, clap, tracing
-- Svelte (UI - TBD)
+- **Web API**: REST API for managing resources and viewing recommendations
+- **Agent**: Collects metrics from infrastructure
+- **Analytics**: Python-based forecasting engine with ML models
+- **Database**: SQLite (single instance) or PostgreSQL (distributed)
 
----
-
-## Project Status
-
-| Milestone | Status | Progress |
-|-----------|--------|----------|
-| M1: Core + DB | 🔜 Next | 0/16 |
-| M2: Web API | 📋 Planned | 0/14 |
-| M3: Prometheus | 📋 Planned | 0/10 |
-| M4: Analytics | 📋 Planned | 0/14 |
-| M5: UI | 📋 Planned | 0/12 |
-| M6: Agent | 📋 Planned | 0/8 |
-| M7: Kubernetes | 📋 Planned | 0/10 |
-| M8: PostgreSQL | 📋 Planned | 0/8 |
-| M9: Custom ML | 📋 Planned | 0/10 |
-| M10: Production | 📋 Planned | 0/12 |
-
-**Total**: 0/114 tickets complete
-
----
-
-## Documentation
-
-- [`docs/PROJECT_STATE.md`](docs/PROJECT_STATE.md) — **Start here** for current state
-- [`docs/PRD.md`](docs/PRD.md) — Product requirements
-- [`docs/tickets/`](docs/tickets/) — Implementation tickets (114 total)
-- [`docs/tickets/MILESTONES_SUMMARY.md`](docs/tickets/MILESTONES_SUMMARY.md) — All milestones overview
-
----
-
-## Development
-
-**Prerequisites**:
-- Rust 1.75+ (will be specified in CP-M1-001)
-- Python 3.11+
-- Git
-
-**Setup** (will be documented as we build):
-```bash
-# Clone
-git clone <repo-url>
-cd klyster
-
-# Build (after CP-M1-001)
-cargo build
-
-# Run (after CP-M1-016)
-cargo run
-```
-
----
-
-## Contributing
-
-This project is currently in active development. Implementation follows the ticket system in `docs/tickets/`.
-
-**Workflow**:
-1. Pick next unchecked ticket from current milestone
-2. Implement according to acceptance criteria
-3. Update ticket status (mark as done)
-4. Commit with conventional commit message
-5. Move to next ticket
-
----
+All components can run together in a single binary or separately for distributed deployment.
 
 ## License
 
-MIT (see [LICENSE](LICENSE))
+MIT
 
----
+## Authors
 
-## Contact
-
-(To be added)
-
+Klyster Contributors
