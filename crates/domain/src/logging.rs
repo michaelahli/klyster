@@ -6,8 +6,16 @@ use tracing_subscriber::{fmt, layer::SubscriberExt, util::SubscriberInitExt, Env
 
 /// Initialize logging based on configuration.
 ///
-/// Sets up tracing subscriber with JSON formatting and configurable log level.
+/// Sets up tracing subscriber with configurable format and log level.
 /// Respects `RUST_LOG` environment variable if set.
+///
+/// Supported formats:
+/// - `json`: JSON structured logs (default)
+/// - `text`: Plain text logs
+/// - `logfmt`: Logfmt-style logs
+///
+/// Note: Multiple outputs (file, syslog) and advanced features (rotation, audit logs)
+/// will be fully implemented in M2. For M1, stdout output is supported.
 pub fn init(config: &Config, cli_log_level: Option<&str>) -> Result<(), String> {
     let log_level = cli_log_level
         .or(Some(&config.logging.level))
@@ -34,6 +42,18 @@ pub fn init(config: &Config, cli_log_level: Option<&str>) -> Result<(), String> 
                 .map_err(|e| format!("Failed to initialize logging: {e}"))?;
         }
         "text" => {
+            tracing_subscriber::registry()
+                .with(filter)
+                .with(
+                    fmt::layer()
+                        .with_target(true)
+                        .with_timer(fmt::time::UtcTime::rfc_3339()),
+                )
+                .try_init()
+                .map_err(|e| format!("Failed to initialize logging: {e}"))?;
+        }
+        "logfmt" => {
+            // Logfmt format (key=value pairs)
             tracing_subscriber::registry()
                 .with(filter)
                 .with(
