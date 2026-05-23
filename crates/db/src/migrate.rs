@@ -79,4 +79,39 @@ mod tests {
 
         pool.close().await;
     }
+
+    #[tokio::test]
+    async fn test_metrics_schema_created() {
+        let config = test_config_sqlite();
+        let pool = DatabasePool::new(&config).await.unwrap();
+
+        // Run migrations
+        run_migrations(&pool).await.unwrap();
+
+        // Verify tables exist by querying them
+        match &pool {
+            DatabasePool::Sqlite(sqlite_pool) => {
+                // Check metric_sources table
+                let result = sqlx::query("SELECT COUNT(*) FROM metric_sources")
+                    .fetch_one(sqlite_pool)
+                    .await;
+                assert!(result.is_ok());
+
+                // Check metrics table
+                let result = sqlx::query("SELECT COUNT(*) FROM metrics")
+                    .fetch_one(sqlite_pool)
+                    .await;
+                assert!(result.is_ok());
+
+                // Check metric_labels table
+                let result = sqlx::query("SELECT COUNT(*) FROM metric_labels")
+                    .fetch_one(sqlite_pool)
+                    .await;
+                assert!(result.is_ok());
+            }
+            DatabasePool::Postgres(_) => {}
+        }
+
+        pool.close().await;
+    }
 }
