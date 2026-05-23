@@ -1,14 +1,17 @@
 //! Klyster binary entry point.
 
+mod bootstrap;
 mod cli;
 
+use bootstrap::Components;
 use clap::Parser;
 use cli::Cli;
 use domain::{logging, Config};
 use std::process;
-use tracing::info;
+use tracing::{error, info};
 
-fn main() {
+#[tokio::main]
+async fn main() {
     let cli = Cli::parse();
 
     let config = match Config::load(Some(&cli.config)) {
@@ -40,16 +43,15 @@ fn main() {
         "Components enabled"
     );
 
-    if components.web {
-        info!("Starting web component");
-    }
-    if components.agent {
-        info!("Starting agent component");
-    }
-    if components.analytics {
-        info!("Starting analytics component");
-    }
-    if components.ui {
-        info!("Starting UI component");
+    let bootstrap_components = Components {
+        web: components.web,
+        agent: components.agent,
+        analytics: components.analytics,
+        ui: components.ui,
+    };
+
+    if let Err(e) = bootstrap::bootstrap(config, bootstrap_components).await {
+        error!("Application failed: {}", e);
+        process::exit(1);
     }
 }
