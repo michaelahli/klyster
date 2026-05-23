@@ -12,3 +12,8 @@ description = "Database access, migrations, and repositories for Klyster"
 workspace = true
 
 [dependencies]
+domain.workspace = true
+thiserror.workspace = true
+tracing.workspace = true
+sqlx = { version = "0.8", features = ["runtime-tokio", "sqlite", "postgres"] }
+tokio.workspace = true
