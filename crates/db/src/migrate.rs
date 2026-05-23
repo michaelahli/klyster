@@ -81,6 +81,50 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn test_analytics_functions_schema_created() {
+        let config = test_config_sqlite();
+        let pool = DatabasePool::new(&config).await.unwrap();
+
+        // Run migrations
+        run_migrations(&pool).await.unwrap();
+
+        // Verify table exists and seed data was inserted
+        match &pool {
+            DatabasePool::Sqlite(sqlite_pool) => {
+                // Check analytics_functions table exists
+                let result = sqlx::query("SELECT COUNT(*) FROM analytics_functions")
+                    .fetch_one(sqlite_pool)
+                    .await;
+                assert!(result.is_ok());
+
+                // Verify seed data (4 predefined functions)
+                let count: (i64,) = sqlx::query_as(
+                    "SELECT COUNT(*) FROM analytics_functions WHERE type = 'predefined'",
+                )
+                .fetch_one(sqlite_pool)
+                .await
+                .unwrap();
+                assert_eq!(count.0, 4);
+
+                // Verify specific functions exist
+                let names: Vec<(String,)> =
+                    sqlx::query_as("SELECT name FROM analytics_functions ORDER BY name")
+                        .fetch_all(sqlite_pool)
+                        .await
+                        .unwrap();
+                assert_eq!(names.len(), 4);
+                assert_eq!(names[0].0, "arima");
+                assert_eq!(names[1].0, "linear_regression");
+                assert_eq!(names[2].0, "seasonal_decomposition");
+                assert_eq!(names[3].0, "threshold_rules");
+            }
+            DatabasePool::Postgres(_) => {}
+        }
+
+        pool.close().await;
+    }
+
+    #[tokio::test]
     async fn test_forecasts_schema_created() {
         let config = test_config_sqlite();
         let pool = DatabasePool::new(&config).await.unwrap();
