@@ -379,8 +379,7 @@ impl Config {
         }
 
         if ![
-            "trace", "debug", "info", "warn", "error", "TRACE", "DEBUG", "INFO", "WARN",
-            "ERROR",
+            "trace", "debug", "info", "warn", "error", "TRACE", "DEBUG", "INFO", "WARN", "ERROR",
         ]
         .contains(&self.logging.level.as_str())
         {
@@ -413,10 +412,12 @@ impl Config {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use serial_test::serial;
     use std::env;
     use std::io::Write;
 
     #[test]
+    #[serial]
     fn test_default_config() {
         env::remove_var("KLYSTER_WEB_PORT");
         env::remove_var("KLYSTER_LOGGING_LEVEL");
@@ -452,6 +453,7 @@ level = "info"
     }
 
     #[test]
+    #[serial]
     fn test_env_override() {
         let mut file = tempfile::Builder::new().suffix(".toml").tempfile().unwrap();
         writeln!(
@@ -489,7 +491,9 @@ level = "info"
     }
 
     #[test]
+    #[serial]
     fn test_validation_invalid_port() {
+        env::remove_var("KLYSTER_WEB_PORT");
         let mut file = tempfile::Builder::new().suffix(".toml").tempfile().unwrap();
         writeln!(
             file,
@@ -549,6 +553,7 @@ level = "info"
     }
 
     #[test]
+    #[serial]
     fn test_validation_invalid_log_level() {
         let mut file = tempfile::Builder::new().suffix(".toml").tempfile().unwrap();
         writeln!(
@@ -694,7 +699,7 @@ sample_rate = 0.5
         let config = Config::load(Some(file.path())).unwrap();
         assert!(config.telemetry.enabled);
         assert_eq!(config.telemetry.exporter, "otlp");
-        assert_eq!(config.telemetry.sample_rate, 0.5);
+        assert!((config.telemetry.sample_rate - 0.5).abs() < f64::EPSILON);
     }
 
     #[test]

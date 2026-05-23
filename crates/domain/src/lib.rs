@@ -2,5 +2,7 @@
 
 /// Configuration management.
 pub mod config;
+/// Logging initialization.
+pub mod logging;
 
 pub use config::Config;

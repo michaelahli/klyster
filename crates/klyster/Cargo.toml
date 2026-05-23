@@ -12,13 +12,12 @@ description = "Capacity planning application for Kubernetes and VM workloads"
 workspace = true
 
 [dependencies]
+anyhow.workspace = true
+clap.workspace = true
 domain.workspace = true
+tokio.workspace = true
+tracing.workspace = true
 db.workspace = true
 web.workspace = true
 agent.workspace = true
 analytics.workspace = true
-
-anyhow.workspace = true
-tokio.workspace = true
-tracing.workspace = true
-clap = { version = "4.4.18", features = ["derive"] }
