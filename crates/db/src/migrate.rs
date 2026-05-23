@@ -81,6 +81,41 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn test_resources_schema_created() {
+        let config = test_config_sqlite();
+        let pool = DatabasePool::new(&config).await.unwrap();
+
+        // Run migrations
+        run_migrations(&pool).await.unwrap();
+
+        // Verify tables exist by querying them
+        match &pool {
+            DatabasePool::Sqlite(sqlite_pool) => {
+                // Check resource_groups table
+                let result = sqlx::query("SELECT COUNT(*) FROM resource_groups")
+                    .fetch_one(sqlite_pool)
+                    .await;
+                assert!(result.is_ok());
+
+                // Check resources table
+                let result = sqlx::query("SELECT COUNT(*) FROM resources")
+                    .fetch_one(sqlite_pool)
+                    .await;
+                assert!(result.is_ok());
+
+                // Check scaling_targets table
+                let result = sqlx::query("SELECT COUNT(*) FROM scaling_targets")
+                    .fetch_one(sqlite_pool)
+                    .await;
+                assert!(result.is_ok());
+            }
+            DatabasePool::Postgres(_) => {}
+        }
+
+        pool.close().await;
+    }
+
+    #[tokio::test]
     async fn test_metrics_schema_created() {
         let config = test_config_sqlite();
         let pool = DatabasePool::new(&config).await.unwrap();
