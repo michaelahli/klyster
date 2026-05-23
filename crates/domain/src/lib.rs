@@ -6,5 +6,7 @@ pub mod config;
 pub mod logging;
 /// Domain models.
 pub mod models;
+/// Graceful shutdown orchestration.
+pub mod shutdown;
 
 pub use config::Config;
