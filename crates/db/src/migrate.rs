@@ -81,6 +81,41 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn test_forecasts_schema_created() {
+        let config = test_config_sqlite();
+        let pool = DatabasePool::new(&config).await.unwrap();
+
+        // Run migrations
+        run_migrations(&pool).await.unwrap();
+
+        // Verify tables exist by querying them
+        match &pool {
+            DatabasePool::Sqlite(sqlite_pool) => {
+                // Check forecasts table
+                let result = sqlx::query("SELECT COUNT(*) FROM forecasts")
+                    .fetch_one(sqlite_pool)
+                    .await;
+                assert!(result.is_ok());
+
+                // Check forecast_points table
+                let result = sqlx::query("SELECT COUNT(*) FROM forecast_points")
+                    .fetch_one(sqlite_pool)
+                    .await;
+                assert!(result.is_ok());
+
+                // Check recommendations table
+                let result = sqlx::query("SELECT COUNT(*) FROM recommendations")
+                    .fetch_one(sqlite_pool)
+                    .await;
+                assert!(result.is_ok());
+            }
+            DatabasePool::Postgres(_) => {}
+        }
+
+        pool.close().await;
+    }
+
+    #[tokio::test]
     async fn test_resources_schema_created() {
         let config = test_config_sqlite();
         let pool = DatabasePool::new(&config).await.unwrap();
