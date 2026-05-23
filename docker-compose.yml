@@ -1,0 +1,109 @@
+version: '3.8'
+
+services:
+  # PostgreSQL database for distributed deployment
+  postgres:
+    image: postgres:16-alpine
+    container_name: klyster-postgres
+    environment:
+      POSTGRES_DB: klyster
+      POSTGRES_USER: klyster
+      POSTGRES_PASSWORD: klyster_dev_password
+      POSTGRES_INITDB_ARGS: "-E UTF8"
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U klyster"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - klyster-network
+
+  # Prometheus for metrics collection (for M3)
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: klyster-prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./docker/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    networks:
+      - klyster-network
+    depends_on:
+      - postgres
+
+  # Grafana for visualization (for M10)
+  grafana:
+    image: grafana/grafana:latest
+    container_name: klyster-grafana
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_INSTALL_PLUGINS: ""
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./docker/grafana/provisioning:/etc/grafana/provisioning:ro
+    networks:
+      - klyster-network
+    depends_on:
+      - prometheus
+
+  # Jaeger for distributed tracing (for M10)
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    container_name: klyster-jaeger
+    environment:
+      COLLECTOR_OTLP_ENABLED: "true"
+    ports:
+      - "6831:6831/udp"  # Jaeger agent
+      - "6832:6832/udp"  # Jaeger agent
+      - "5778:5778"      # Jaeger agent configs
+      - "16686:16686"    # Jaeger UI
+      - "4317:4317"      # OTLP gRPC
+      - "4318:4318"      # OTLP HTTP
+      - "14250:14250"    # Jaeger collector
+      - "14268:14268"    # Jaeger collector HTTP
+    networks:
+      - klyster-network
+
+  # pgAdmin for database management (optional)
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: klyster-pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@klyster.local
+      PGADMIN_DEFAULT_PASSWORD: admin
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
+    ports:
+      - "5050:80"
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    networks:
+      - klyster-network
+    depends_on:
+      - postgres
+
+volumes:
+  postgres_data:
+    driver: local
+  prometheus_data:
+    driver: local
+  grafana_data:
+    driver: local
+  pgadmin_data:
+    driver: local
+
+networks:
+  klyster-network:
+    driver: bridge
