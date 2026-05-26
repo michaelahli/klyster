@@ -10,7 +10,7 @@ use axum::{
 };
 use db::repositories::MetricSourceRepository;
 use domain::models::MetricSourceType;
-use tracing::{debug, warn};
+use tracing::debug;
 
 /// Create a new metric source.
 ///

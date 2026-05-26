@@ -48,6 +48,7 @@ tower = { version = "0.5", features = ["util"] }
 tower-http = { version = "0.6", features = ["trace", "cors", "request-id", "util"] }
 hyper = "1.4"
 http = "1.1"
+chrono = { version = "0.4", features = ["serde"] }
 
 [profile.release]
 lto = "thin"

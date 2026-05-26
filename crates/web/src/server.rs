@@ -1,7 +1,7 @@
 //! HTTP server setup and lifecycle management.
 
-use crate::error::{ApiError, ErrorResponse, ErrorDetail};
-use crate::routes::{health, sources};
+use crate::error::{ErrorResponse, ErrorDetail};
+use crate::routes::{health, metrics, sources};
 use crate::state::AppState;
 use axum::{routing::get, Json, Router};
 use axum::routing::{delete, post, put};
@@ -57,7 +57,10 @@ pub fn build_router(state: AppState) -> Router {
         .route("/sources", get(sources::list_sources))
         .route("/sources/:id", get(sources::get_source))
         .route("/sources/:id", put(sources::update_source))
-        .route("/sources/:id", delete(sources::delete_source));
+        .route("/sources/:id", delete(sources::delete_source))
+        .route("/metrics", get(metrics::list_metric_names))
+        .route("/metrics/latest", get(metrics::get_latest_metrics))
+        .route("/metrics/:name", get(metrics::query_metrics));
 
     Router::new()
         .route("/", get(root))
