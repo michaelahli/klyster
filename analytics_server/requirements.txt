@@ -1,0 +1,20 @@
+# Analytics Server Requirements
+# Python 3.11+
+
+# gRPC (compatible with Python 3.14)
+grpcio>=1.60.0
+grpcio-tools>=1.60.0
+
+# Data processing
+numpy>=1.26.0
+pandas>=2.2.0
+
+# Machine learning
+scikit-learn>=1.4.0
+statsmodels>=0.14.0
+
+# Additional ML (for ARIMA)
+pmdarima>=2.0.0
+
+# Utilities
+python-dateutil>=2.9.0
