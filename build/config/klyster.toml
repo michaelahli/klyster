@@ -23,7 +23,9 @@ grpc_endpoint = "http://localhost:50051"
 [logging]
 level = "info"
 format = "json"
-outputs = ["stdout"]
+
+[[logging.outputs]]
+type = "stdout"
 
 [telemetry]
 enabled = false
