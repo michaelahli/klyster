@@ -1,11 +1,6 @@
 //! APM (Application Performance Monitoring) logging middleware.
 
-use axum::{
-    body::Body,
-    extract::Request,
-    middleware::Next,
-    response::Response,
-};
+use axum::{body::Body, extract::Request, middleware::Next, response::Response};
 use std::time::Instant;
 use tracing::{info, warn};
 use uuid::Uuid;
@@ -15,24 +10,24 @@ use uuid::Uuid;
 /// Logs request/response traces with duration, trace IDs, and error tracking.
 pub async fn apm_logging_middleware(request: Request, next: Next) -> Response {
     let start = Instant::now();
-    
+
     // Generate trace ID for distributed tracing
     let trace_id = Uuid::new_v4().to_string();
-    
+
     // Extract request details
     let method = request.method().to_string();
     let uri = request.uri().to_string();
     let version = format!("{:?}", request.version());
-    
+
     // Add trace ID to request headers (for downstream services)
     // Note: In a real implementation, we'd use request extensions
-    
+
     // Process request
     let response = next.run(request).await;
-    
+
     let duration = start.elapsed();
     let status = response.status().as_u16();
-    
+
     // Log in APM-compatible format
     if status >= 500 {
         warn!(
@@ -68,7 +63,7 @@ pub async fn apm_logging_middleware(request: Request, next: Next) -> Response {
             "HTTP request completed"
         );
     }
-    
+
     response
 }
 
@@ -99,10 +94,7 @@ mod tests {
             .route("/test", get(test_handler))
             .layer(middleware::from_fn(apm_logging_middleware));
 
-        let request = Request::builder()
-            .uri("/test")
-            .body(Body::empty())
-            .unwrap();
+        let request = Request::builder().uri("/test").body(Body::empty()).unwrap();
 
         let response = app.oneshot(request).await.unwrap();
         assert_eq!(response.status(), StatusCode::OK);

@@ -1,11 +1,6 @@
 //! Request/response logging middleware.
 
-use axum::{
-    body::Body,
-    extract::Request,
-    middleware::Next,
-    response::Response,
-};
+use axum::{body::Body, extract::Request, middleware::Next, response::Response};
 use std::time::Instant;
 use tracing::{info, warn};
 
@@ -14,12 +9,12 @@ use tracing::{info, warn};
 /// Logs every request with method, path, status, duration, and request ID.
 pub async fn request_logging_middleware(request: Request, next: Next) -> Response {
     let start = Instant::now();
-    
+
     // Extract request details
     let method = request.method().clone();
     let uri = request.uri().clone();
     let version = request.version();
-    
+
     // Generate request ID (or extract from header if present)
     let request_id = request
         .headers()
@@ -27,13 +22,13 @@ pub async fn request_logging_middleware(request: Request, next: Next) -> Respons
         .and_then(|v| v.to_str().ok())
         .map(|s| s.to_string())
         .unwrap_or_else(|| uuid::Uuid::new_v4().to_string());
-    
+
     // Process request
     let response = next.run(request).await;
-    
+
     let duration = start.elapsed();
     let status = response.status();
-    
+
     // Log based on status code
     if status.is_server_error() {
         warn!(
@@ -66,7 +61,7 @@ pub async fn request_logging_middleware(request: Request, next: Next) -> Respons
             "Request completed successfully"
         );
     }
-    
+
     // Warn on slow requests (> 1 second)
     if duration.as_secs() >= 1 {
         warn!(
@@ -77,7 +72,7 @@ pub async fn request_logging_middleware(request: Request, next: Next) -> Respons
             "Slow request detected"
         );
     }
-    
+
     response
 }
 
@@ -113,10 +108,7 @@ mod tests {
             .route("/test", get(test_handler))
             .layer(middleware::from_fn(request_logging_middleware));
 
-        let request = Request::builder()
-            .uri("/test")
-            .body(Body::empty())
-            .unwrap();
+        let request = Request::builder().uri("/test").body(Body::empty()).unwrap();
 
         let response = app.oneshot(request).await.unwrap();
         assert_eq!(response.status(), StatusCode::OK);
@@ -159,10 +151,7 @@ mod tests {
             .route("/slow", get(slow_handler))
             .layer(middleware::from_fn(request_logging_middleware));
 
-        let request = Request::builder()
-            .uri("/slow")
-            .body(Body::empty())
-            .unwrap();
+        let request = Request::builder().uri("/slow").body(Body::empty()).unwrap();
 
         let response = app.oneshot(request).await.unwrap();
         assert_eq!(response.status(), StatusCode::OK);

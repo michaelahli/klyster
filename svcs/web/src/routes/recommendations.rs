@@ -187,6 +187,7 @@ mod tests {
             agent: AgentConfig {
                 enabled: false,
                 collection_interval_secs: 60,
+                prometheus: domain::config::PrometheusAgentConfig::default(),
             },
             analytics: AnalyticsConfig {
                 enabled: false,
@@ -361,9 +362,7 @@ mod tests {
     async fn test_approve_nonexistent_recommendation() {
         let (state, _) = setup_test_state().await;
 
-        let req = DecideRecommendationRequest {
-            decided_by: None,
-        };
+        let req = DecideRecommendationRequest { decided_by: None };
         let result = approve_recommendation(State(state.clone()), Path(999), Json(req)).await;
         assert!(matches!(result, Err(ApiError::NotFound(_))));
     }

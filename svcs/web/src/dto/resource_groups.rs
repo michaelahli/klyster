@@ -109,9 +109,8 @@ pub struct ResourceResponse {
 impl ResourceResponse {
     /// Convert from domain model.
     pub fn from_model(resource: domain::models::Resource) -> Self {
-        let labels: Option<serde_json::Value> = resource
-            .labels
-            .and_then(|l| serde_json::from_str(&l).ok());
+        let labels: Option<serde_json::Value> =
+            resource.labels.and_then(|l| serde_json::from_str(&l).ok());
 
         Self {
             id: resource.id,

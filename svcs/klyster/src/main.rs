@@ -2,10 +2,11 @@
 
 mod bootstrap;
 mod cli;
+mod test_prometheus;
 
 use bootstrap::Components;
 use clap::Parser;
-use cli::Cli;
+use cli::{Cli, Commands};
 use domain::{logging, Config};
 use std::process;
 use tracing::{error, info};
@@ -13,6 +14,23 @@ use tracing::{error, info};
 #[tokio::main]
 async fn main() {
     let cli = Cli::parse();
+
+    // Handle subcommands first
+    if let Some(command) = cli.command {
+        match command {
+            Commands::TestPrometheus {
+                url,
+                timeout,
+                auth_token,
+            } => {
+                if let Err(e) = test_prometheus::run(&url, timeout, auth_token).await {
+                    eprintln!("Error: {e}");
+                    process::exit(1);
+                }
+                return;
+            }
+        }
+    }
 
     let config = match Config::load(Some(&cli.config)) {
         Ok(cfg) => cfg,

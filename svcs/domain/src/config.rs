@@ -71,6 +71,47 @@ pub struct AgentConfig {
     /// Collection interval in seconds
     #[serde(default = "default_agent_interval")]
     pub collection_interval_secs: u64,
+    /// Prometheus configuration
+    #[serde(default)]
+    pub prometheus: PrometheusAgentConfig,
+}
+
+/// Prometheus agent configuration.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PrometheusAgentConfig {
+    /// Prometheus server URL
+    #[serde(default = "default_prometheus_url")]
+    pub url: String,
+    /// Request timeout in seconds
+    #[serde(default = "default_prometheus_timeout")]
+    pub timeout_secs: u64,
+    /// Optional authentication token
+    #[serde(default)]
+    pub auth_token: Option<String>,
+    /// Collect infrastructure metrics
+    #[serde(default = "default_collect_infrastructure")]
+    pub collect_infrastructure: bool,
+    /// Collect Kubernetes metrics
+    #[serde(default = "default_collect_kubernetes")]
+    pub collect_kubernetes: bool,
+    /// Enable service discovery
+    #[serde(default = "default_service_discovery_enabled")]
+    pub service_discovery_enabled: bool,
+    /// Service discovery refresh interval in seconds
+    #[serde(default = "default_service_discovery_refresh")]
+    pub service_discovery_refresh_secs: u64,
+    /// Custom queries
+    #[serde(default)]
+    pub custom_queries: Vec<CustomQueryConfig>,
+}
+
+/// Custom query configuration.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CustomQueryConfig {
+    /// Metric name
+    pub name: String,
+    /// PromQL query
+    pub query: String,
 }
 
 /// Analytics configuration.
@@ -282,6 +323,30 @@ fn default_audit_logs_days() -> u32 {
     365
 }
 
+fn default_prometheus_url() -> String {
+    "http://localhost:9090".to_string()
+}
+
+fn default_prometheus_timeout() -> u64 {
+    30
+}
+
+fn default_collect_infrastructure() -> bool {
+    true
+}
+
+fn default_collect_kubernetes() -> bool {
+    false
+}
+
+fn default_service_discovery_enabled() -> bool {
+    false
+}
+
+fn default_service_discovery_refresh() -> u64 {
+    300
+}
+
 fn default_cleanup_schedule() -> String {
     "0 2 * * *".to_string()
 }
@@ -313,6 +378,21 @@ impl Default for MetricsConfig {
         Self {
             enabled: default_metrics_enabled(),
             endpoint: default_metrics_endpoint(),
+        }
+    }
+}
+
+impl Default for PrometheusAgentConfig {
+    fn default() -> Self {
+        Self {
+            url: default_prometheus_url(),
+            timeout_secs: default_prometheus_timeout(),
+            auth_token: None,
+            collect_infrastructure: default_collect_infrastructure(),
+            collect_kubernetes: default_collect_kubernetes(),
+            service_discovery_enabled: default_service_discovery_enabled(),
+            service_discovery_refresh_secs: default_service_discovery_refresh(),
+            custom_queries: Vec::new(),
         }
     }
 }

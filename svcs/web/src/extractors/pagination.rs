@@ -116,7 +116,11 @@ mod tests {
 
     #[test]
     fn test_pagination_normalize() {
-        let pagination = Pagination { page: 0, per_page: 0 }.normalize();
+        let pagination = Pagination {
+            page: 0,
+            per_page: 0,
+        }
+        .normalize();
         assert_eq!(pagination.page, 1);
         assert_eq!(pagination.per_page, 50);
 

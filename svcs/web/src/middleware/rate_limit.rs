@@ -52,9 +52,9 @@ impl RateLimiter {
 
         // Cleanup old buckets periodically
         if state.last_cleanup.elapsed() > self.cleanup_interval {
-            state.buckets.retain(|_, bucket| {
-                bucket.last_refill.elapsed() < Duration::from_secs(120)
-            });
+            state
+                .buckets
+                .retain(|_, bucket| bucket.last_refill.elapsed() < Duration::from_secs(120));
             state.last_cleanup = Instant::now();
         }
 
@@ -75,7 +75,8 @@ impl RateLimiter {
             Ok(())
         } else {
             // Calculate retry-after in seconds
-            let retry_after = ((1.0 - bucket.tokens) / self.requests_per_minute as f64 * 60.0).ceil() as u64;
+            let retry_after =
+                ((1.0 - bucket.tokens) / self.requests_per_minute as f64 * 60.0).ceil() as u64;
             Err(retry_after)
         }
     }
@@ -84,7 +85,8 @@ impl RateLimiter {
 /// Rate limiting middleware.
 pub async fn rate_limit_middleware(
     limiter: RateLimiter,
-) -> impl Fn(Request, Next) -> std::pin::Pin<Box<dyn std::future::Future<Output = Response> + Send>> + Clone {
+) -> impl Fn(Request, Next) -> std::pin::Pin<Box<dyn std::future::Future<Output = Response> + Send>>
+       + Clone {
     move |request: Request, next: Next| {
         let limiter = limiter.clone();
         Box::pin(async move {

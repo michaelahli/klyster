@@ -12,3 +12,17 @@ description = "Metrics collection agent for Klyster"
 workspace = true
 
 [dependencies]
+domain.workspace = true
+db.workspace = true
+
+anyhow.workspace = true
+thiserror.workspace = true
+tokio.workspace = true
+tracing.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+chrono.workspace = true
+
+# Prometheus client
+reqwest = { version = "0.12", features = ["json"] }
+url = "2.5"

@@ -65,12 +65,9 @@ mod tests {
         let spec = openapi_spec();
         let parsed: serde_json::Value = serde_json::from_str(&spec).unwrap();
         let tags = parsed["tags"].as_array().unwrap();
-        
-        let tag_names: Vec<&str> = tags
-            .iter()
-            .filter_map(|t| t["name"].as_str())
-            .collect();
-        
+
+        let tag_names: Vec<&str> = tags.iter().filter_map(|t| t["name"].as_str()).collect();
+
         assert!(tag_names.contains(&"health"));
         assert!(tag_names.contains(&"sources"));
         assert!(tag_names.contains(&"metrics"));

@@ -1,13 +1,15 @@
 //! HTTP server setup and lifecycle management.
 
-use crate::error::{ErrorResponse, ErrorDetail};
+use crate::error::{ErrorDetail, ErrorResponse};
 use crate::middleware::apm_logging_middleware;
-use crate::routes::{analytics, config, forecasts, health, metrics, recommendations, resource_groups, sources, ws};
+use crate::routes::{
+    analytics, config, forecasts, health, metrics, recommendations, resource_groups, sources, ws,
+};
 use crate::state::AppState;
-use axum::{routing::get, Json, Router};
-use axum::routing::{delete, post, put};
 use axum::http::StatusCode;
 use axum::middleware;
+use axum::routing::{delete, post, put};
+use axum::{routing::get, Json, Router};
 use serde_json::json;
 use std::net::SocketAddr;
 use std::time::Duration;
@@ -69,22 +71,49 @@ pub fn build_router(state: AppState) -> Router {
         .route("/resource-groups", get(resource_groups::list_groups))
         .route("/resource-groups/:id", get(resource_groups::get_group))
         .route("/resource-groups/:id", put(resource_groups::update_group))
-        .route("/resource-groups/:id", delete(resource_groups::delete_group))
-        .route("/resource-groups/:id/scaling-targets", post(resource_groups::set_scaling_target))
-        .route("/resource-groups/:id/resources", get(resource_groups::list_resources))
+        .route(
+            "/resource-groups/:id",
+            delete(resource_groups::delete_group),
+        )
+        .route(
+            "/resource-groups/:id/scaling-targets",
+            post(resource_groups::set_scaling_target),
+        )
+        .route(
+            "/resource-groups/:id/resources",
+            get(resource_groups::list_resources),
+        )
         .route("/forecasts", get(forecasts::list_forecasts))
         .route("/forecasts/trigger", post(forecasts::trigger_forecast))
         .route("/forecasts/:id", get(forecasts::get_forecast))
-        .route("/recommendations", get(recommendations::list_recommendations))
-        .route("/recommendations/pending", get(recommendations::list_pending_recommendations))
-        .route("/recommendations/:id/approve", post(recommendations::approve_recommendation))
-        .route("/recommendations/:id/dismiss", post(recommendations::dismiss_recommendation))
+        .route(
+            "/recommendations",
+            get(recommendations::list_recommendations),
+        )
+        .route(
+            "/recommendations/pending",
+            get(recommendations::list_pending_recommendations),
+        )
+        .route(
+            "/recommendations/:id/approve",
+            post(recommendations::approve_recommendation),
+        )
+        .route(
+            "/recommendations/:id/dismiss",
+            post(recommendations::dismiss_recommendation),
+        )
         .route("/analytics/functions", get(analytics::list_functions))
         .route("/analytics/functions", post(analytics::create_function))
         .route("/analytics/functions/:id", get(analytics::get_function))
         .route("/analytics/functions/:id", put(analytics::update_function))
-        .route("/analytics/functions/:id", delete(analytics::delete_function))
-        .route("/analytics/functions/:id/test", post(analytics::test_function))
+        .route(
+            "/analytics/functions/:id",
+            delete(analytics::delete_function),
+        )
+        .route(
+            "/analytics/functions/:id/test",
+            post(analytics::test_function),
+        )
         .route("/config", get(config::get_config))
         .route("/config", axum::routing::patch(config::update_config))
         .route("/ws/metrics", get(ws::ws_metrics_handler));
@@ -95,7 +124,10 @@ pub fn build_router(state: AppState) -> Router {
         .route("/readyz", get(health::readiness))
         .route("/metrics", get(metrics_endpoint))
         .nest("/api/v1", api_v1)
-        .merge(SwaggerUi::new("/api/docs").url("/api/docs/openapi.json", crate::docs::ApiDoc::openapi()))
+        .merge(
+            SwaggerUi::new("/api/docs")
+                .url("/api/docs/openapi.json", crate::docs::ApiDoc::openapi()),
+        )
         .fallback(handler_404)
         .layer(middleware::from_fn(apm_logging_middleware))
         .layer(TraceLayer::new_for_http())
@@ -112,8 +144,7 @@ async fn root() -> Json<serde_json::Value> {
 
 /// Prometheus metrics endpoint.
 async fn metrics_endpoint() -> Result<String, (StatusCode, String)> {
-    crate::metrics::gather_metrics()
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e))
+    crate::metrics::gather_metrics().map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e))
 }
 
 /// 404 handler for unknown routes.
@@ -142,10 +173,7 @@ fn resolve_addr(host: &str, port: u16) -> Result<SocketAddr, ServerError> {
         .ok_or_else(|| ServerError::InvalidAddress {
             host: host.to_string(),
             port,
-            source: std::io::Error::new(
-                std::io::ErrorKind::InvalidInput,
-                "no addresses resolved",
-            ),
+            source: std::io::Error::new(std::io::ErrorKind::InvalidInput, "no addresses resolved"),
         })
 }
 
@@ -179,10 +207,13 @@ where
 {
     let router = build_router(state);
 
-    let server = axum::serve(listener, router.into_make_service())
-        .with_graceful_shutdown(async move {
+    let server =
+        axum::serve(listener, router.into_make_service()).with_graceful_shutdown(async move {
             shutdown.await;
-            info!(grace_period_secs = grace_period.as_secs(), "Draining in-flight requests");
+            info!(
+                grace_period_secs = grace_period.as_secs(),
+                "Draining in-flight requests"
+            );
         });
 
     if let Err(e) = server.await {
@@ -198,7 +229,7 @@ where
 mod tests {
     use super::*;
     use db::DatabasePool;
-use domain::config::{
+    use domain::config::{
         AgentConfig, AnalyticsConfig, DatabaseConfig, LoggingConfig, MetricsConfig,
         RetentionConfig, TelemetryConfig, WebConfig,
     };
@@ -223,6 +254,7 @@ use domain::config::{
             agent: AgentConfig {
                 enabled: false,
                 collection_interval_secs: 60,
+                prometheus: domain::config::PrometheusAgentConfig::default(),
             },
             analytics: AnalyticsConfig {
                 enabled: false,

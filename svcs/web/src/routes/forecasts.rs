@@ -150,6 +150,7 @@ mod tests {
             agent: AgentConfig {
                 enabled: false,
                 collection_interval_secs: 60,
+                prometheus: domain::config::PrometheusAgentConfig::default(),
             },
             analytics: AnalyticsConfig {
                 enabled: false,

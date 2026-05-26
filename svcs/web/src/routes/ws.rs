@@ -35,10 +35,7 @@ pub enum WsMessage {
 /// WebSocket handler for metric streaming.
 ///
 /// WS /api/v1/ws/metrics
-pub async fn ws_metrics_handler(
-    ws: WebSocketUpgrade,
-    State(_state): State<AppState>,
-) -> Response {
+pub async fn ws_metrics_handler(ws: WebSocketUpgrade, State(_state): State<AppState>) -> Response {
     ws.on_upgrade(handle_socket)
 }
 
@@ -55,17 +52,17 @@ async fn handle_socket(mut socket: WebSocket) {
                 match msg {
                     Some(Ok(Message::Text(text))) => {
                         debug!("Received WebSocket message: {}", text);
-                        
+
                         match serde_json::from_str::<WsMessage>(&text) {
                             Ok(WsMessage::Subscribe { metrics }) => {
                                 info!("Subscribing to metrics: {:?}", metrics);
                                 subscribed_metrics.extend(metrics.clone());
-                                
+
                                 let response = serde_json::json!({
                                     "type": "subscribed",
                                     "metrics": metrics,
                                 });
-                                
+
                                 if socket.send(Message::Text(response.to_string())).await.is_err() {
                                     break;
                                 }
@@ -73,12 +70,12 @@ async fn handle_socket(mut socket: WebSocket) {
                             Ok(WsMessage::Unsubscribe { metrics }) => {
                                 info!("Unsubscribing from metrics: {:?}", metrics);
                                 subscribed_metrics.retain(|m| !metrics.contains(m));
-                                
+
                                 let response = serde_json::json!({
                                     "type": "unsubscribed",
                                     "metrics": metrics,
                                 });
-                                
+
                                 if socket.send(Message::Text(response.to_string())).await.is_err() {
                                     break;
                                 }
@@ -113,7 +110,7 @@ async fn handle_socket(mut socket: WebSocket) {
                     _ => {}
                 }
             }
-            
+
             // Send heartbeat ping
             _ = heartbeat.tick() => {
                 debug!("Sending heartbeat ping");

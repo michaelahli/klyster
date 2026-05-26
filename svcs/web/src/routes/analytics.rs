@@ -306,6 +306,7 @@ mod tests {
             agent: AgentConfig {
                 enabled: false,
                 collection_interval_secs: 60,
+                prometheus: domain::config::PrometheusAgentConfig::default(),
             },
             analytics: AnalyticsConfig {
                 enabled: false,
@@ -452,8 +453,8 @@ mod tests {
             is_active: true,
         };
 
-        let result = update_function(State(state.clone()), Path(created.id), Json(update_req))
-            .await;
+        let result =
+            update_function(State(state.clone()), Path(created.id), Json(update_req)).await;
         assert!(result.is_ok());
 
         let response = result.unwrap();

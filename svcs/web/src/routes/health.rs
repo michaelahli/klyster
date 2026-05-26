@@ -108,10 +108,7 @@ fn uptime_seconds() -> u64 {
     static START_TIME: std::sync::OnceLock<SystemTime> = std::sync::OnceLock::new();
     let start = START_TIME.get_or_init(SystemTime::now);
 
-    start
-        .elapsed()
-        .unwrap_or(Duration::ZERO)
-        .as_secs()
+    start.elapsed().unwrap_or(Duration::ZERO).as_secs()
 }
 
 #[cfg(test)]
@@ -143,6 +140,7 @@ mod tests {
             agent: AgentConfig {
                 enabled: false,
                 collection_interval_secs: 60,
+                prometheus: domain::config::PrometheusAgentConfig::default(),
             },
             analytics: AnalyticsConfig {
                 enabled: false,

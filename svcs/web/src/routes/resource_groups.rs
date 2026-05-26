@@ -44,9 +44,8 @@ pub async fn create_group(
     }
 
     // Serialize config to JSON string
-    let config_str = serde_json::to_string(&req.provider_config).map_err(|e| {
-        ApiError::ValidationError(format!("Invalid config JSON: {}", e))
-    })?;
+    let config_str = serde_json::to_string(&req.provider_config)
+        .map_err(|e| ApiError::ValidationError(format!("Invalid config JSON: {}", e)))?;
 
     let group = ResourceGroup {
         id: 0,
@@ -159,9 +158,8 @@ pub async fn update_group(
         .ok_or_else(|| ApiError::NotFound(format!("Resource group {} not found", id)))?;
 
     // Serialize config to JSON string
-    let config_str = serde_json::to_string(&req.provider_config).map_err(|e| {
-        ApiError::ValidationError(format!("Invalid config JSON: {}", e))
-    })?;
+    let config_str = serde_json::to_string(&req.provider_config)
+        .map_err(|e| ApiError::ValidationError(format!("Invalid config JSON: {}", e)))?;
 
     let updated_group = ResourceGroup {
         id,
@@ -348,6 +346,7 @@ mod tests {
             agent: AgentConfig {
                 enabled: false,
                 collection_interval_secs: 60,
+                prometheus: domain::config::PrometheusAgentConfig::default(),
             },
             analytics: AnalyticsConfig {
                 enabled: false,
@@ -429,9 +428,7 @@ mod tests {
             provider_type: "kubernetes".to_string(),
             provider_config: serde_json::json!({}),
         };
-        create_group(State(state.clone()), Json(req))
-            .await
-            .unwrap();
+        create_group(State(state.clone()), Json(req)).await.unwrap();
 
         let result = list_groups(State(state.clone())).await;
         assert!(result.is_ok());
@@ -452,9 +449,7 @@ mod tests {
             provider_type: "kubernetes".to_string(),
             provider_config: serde_json::json!({}),
         };
-        let (_, created) = create_group(State(state.clone()), Json(req))
-            .await
-            .unwrap();
+        let (_, created) = create_group(State(state.clone()), Json(req)).await.unwrap();
 
         let result = get_group(State(state.clone()), Path(created.id)).await;
         assert!(result.is_ok());
@@ -477,9 +472,7 @@ mod tests {
             provider_type: "kubernetes".to_string(),
             provider_config: serde_json::json!({}),
         };
-        let (_, created) = create_group(State(state.clone()), Json(req))
-            .await
-            .unwrap();
+        let (_, created) = create_group(State(state.clone()), Json(req)).await.unwrap();
 
         // Update it
         let update_req = UpdateResourceGroupRequest {
@@ -508,9 +501,7 @@ mod tests {
             provider_type: "kubernetes".to_string(),
             provider_config: serde_json::json!({}),
         };
-        let (_, created) = create_group(State(state.clone()), Json(req))
-            .await
-            .unwrap();
+        let (_, created) = create_group(State(state.clone()), Json(req)).await.unwrap();
 
         // Delete it
         let result = delete_group(State(state.clone()), Path(created.id)).await;
@@ -533,9 +524,7 @@ mod tests {
             provider_type: "kubernetes".to_string(),
             provider_config: serde_json::json!({}),
         };
-        let (_, created) = create_group(State(state.clone()), Json(req))
-            .await
-            .unwrap();
+        let (_, created) = create_group(State(state.clone()), Json(req)).await.unwrap();
 
         // Set scaling target
         let target_req = SetScalingTargetRequest {
@@ -545,8 +534,8 @@ mod tests {
             target_value: 0.7,
         };
 
-        let result = set_scaling_target(State(state.clone()), Path(created.id), Json(target_req))
-            .await;
+        let result =
+            set_scaling_target(State(state.clone()), Path(created.id), Json(target_req)).await;
         assert!(result.is_ok());
 
         let (status, response) = result.unwrap();
@@ -567,9 +556,7 @@ mod tests {
             provider_type: "kubernetes".to_string(),
             provider_config: serde_json::json!({}),
         };
-        let (_, created) = create_group(State(state.clone()), Json(req))
-            .await
-            .unwrap();
+        let (_, created) = create_group(State(state.clone()), Json(req)).await.unwrap();
 
         // Invalid: max < min
         let target_req = SetScalingTargetRequest {
@@ -579,8 +566,8 @@ mod tests {
             target_value: 0.7,
         };
 
-        let result = set_scaling_target(State(state.clone()), Path(created.id), Json(target_req))
-            .await;
+        let result =
+            set_scaling_target(State(state.clone()), Path(created.id), Json(target_req)).await;
         assert!(matches!(result, Err(ApiError::ValidationError(_))));
 
         // Invalid: negative target value
@@ -591,8 +578,8 @@ mod tests {
             target_value: -0.5,
         };
 
-        let result = set_scaling_target(State(state.clone()), Path(created.id), Json(target_req))
-            .await;
+        let result =
+            set_scaling_target(State(state.clone()), Path(created.id), Json(target_req)).await;
         assert!(matches!(result, Err(ApiError::ValidationError(_))));
     }
 }

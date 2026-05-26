@@ -1,6 +1,6 @@
 //! CLI argument parsing for Klyster.
 
-use clap::{Parser, ValueEnum};
+use clap::{Parser, Subcommand, ValueEnum};
 use std::path::PathBuf;
 
 /// Command-line interface for Klyster.
@@ -36,6 +36,29 @@ pub struct Cli {
     /// Run UI component (implies --web)
     #[arg(long)]
     pub ui: bool,
+
+    /// Subcommand to execute
+    #[command(subcommand)]
+    pub command: Option<Commands>,
+}
+
+/// CLI subcommands.
+#[derive(Debug, Subcommand)]
+pub enum Commands {
+    /// Test Prometheus connection
+    TestPrometheus {
+        /// Prometheus server URL
+        #[arg(long, default_value = "http://localhost:9090")]
+        url: String,
+
+        /// Request timeout in seconds
+        #[arg(long, default_value = "30")]
+        timeout: u64,
+
+        /// Optional authentication token
+        #[arg(long)]
+        auth_token: Option<String>,
+    },
 }
 
 /// Log level options.
@@ -178,5 +201,31 @@ mod tests {
         assert!(result.is_err());
         let err = result.unwrap_err();
         assert_eq!(err.kind(), clap::error::ErrorKind::DisplayHelp);
+    }
+
+    #[test]
+    fn test_test_prometheus_subcommand() {
+        let cli = Cli::parse_from(["klyster", "test-prometheus", "--url", "http://prom:9090"]);
+        assert!(matches!(cli.command, Some(Commands::TestPrometheus { .. })));
+
+        if let Some(Commands::TestPrometheus { url, .. }) = cli.command {
+            assert_eq!(url, "http://prom:9090");
+        }
+    }
+
+    #[test]
+    fn test_test_prometheus_with_auth() {
+        let cli = Cli::parse_from([
+            "klyster",
+            "test-prometheus",
+            "--url",
+            "http://prom:9090",
+            "--auth-token",
+            "secret123",
+        ]);
+
+        if let Some(Commands::TestPrometheus { auth_token, .. }) = cli.command {
+            assert_eq!(auth_token, Some("secret123".to_string()));
+        }
     }
 }

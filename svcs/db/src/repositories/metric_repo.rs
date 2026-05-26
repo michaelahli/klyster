@@ -197,7 +197,86 @@ impl<'a> MetricRepository<'a> {
         Ok(metric)
     }
 
-    /// Delete metrics older than the specified timestamp (for retention).
+    /// Insert a batch of metric labels.
+    pub async fn insert_labels_batch(
+        &self,
+        labels: &[domain::models::MetricLabel],
+    ) -> DbResult<u64> {
+        if labels.is_empty() {
+            return Ok(0);
+        }
+
+        debug!(count = labels.len(), "Inserting batch of metric labels");
+
+        let rows_affected = match self.pool {
+            DatabasePool::Sqlite(pool) => {
+                let mut affected = 0u64;
+                for label in labels {
+                    let result = sqlx::query(
+                        "INSERT INTO metric_labels (metric_id, key, value) VALUES (?, ?, ?)",
+                    )
+                    .bind(label.metric_id)
+                    .bind(&label.key)
+                    .bind(&label.value)
+                    .execute(pool)
+                    .await?;
+                    affected += result.rows_affected();
+                }
+                affected
+            }
+            DatabasePool::Postgres(pool) => {
+                let mut affected = 0u64;
+                for label in labels {
+                    let result = sqlx::query(
+                        "INSERT INTO metric_labels (metric_id, key, value) VALUES ($1, $2, $3)",
+                    )
+                    .bind(label.metric_id)
+                    .bind(&label.key)
+                    .bind(&label.value)
+                    .execute(pool)
+                    .await?;
+                    affected += result.rows_affected();
+                }
+                affected
+            }
+        };
+
+        info!(
+            count = labels.len(),
+            rows_affected, "Label batch insert completed"
+        );
+        Ok(rows_affected)
+    }
+
+    /// Query labels for a specific metric.
+    pub async fn query_labels_by_metric(
+        &self,
+        metric_id: i64,
+    ) -> DbResult<Vec<domain::models::MetricLabel>> {
+        debug!(metric_id, "Querying labels for metric");
+
+        let labels = match self.pool {
+            DatabasePool::Sqlite(pool) => {
+                sqlx::query_as::<_, domain::models::MetricLabel>(
+                    "SELECT id, metric_id, key, value FROM metric_labels WHERE metric_id = ?",
+                )
+                .bind(metric_id)
+                .fetch_all(pool)
+                .await?
+            }
+            DatabasePool::Postgres(pool) => {
+                sqlx::query_as::<_, domain::models::MetricLabel>(
+                    "SELECT id, metric_id, key, value FROM metric_labels WHERE metric_id = $1",
+                )
+                .bind(metric_id)
+                .fetch_all(pool)
+                .await?
+            }
+        };
+
+        debug!(count = labels.len(), "Query completed");
+        Ok(labels)
+    }
     pub async fn delete_older_than(&self, timestamp: DateTime<Utc>) -> DbResult<u64> {
         info!(?timestamp, "Deleting metrics older than timestamp");
 
@@ -248,6 +327,7 @@ mod tests {
             agent: AgentConfig {
                 enabled: false,
                 collection_interval_secs: 60,
+                prometheus: domain::config::PrometheusAgentConfig::default(),
             },
             analytics: AnalyticsConfig {
                 enabled: false,

@@ -28,7 +28,10 @@ pub async fn list_metric_names(
     // Query all metrics and extract unique names
     // Note: This is a simple implementation. For production, consider adding
     // a separate table or index for metric names.
-    let metrics = repo.query_by_source(0, Some(10000)).await.unwrap_or_default();
+    let metrics = repo
+        .query_by_source(0, Some(10000))
+        .await
+        .unwrap_or_default();
 
     let mut names: HashSet<String> = HashSet::new();
     for metric in metrics {
@@ -101,7 +104,10 @@ pub async fn query_metrics(
     }
 
     let count = metrics.len();
-    let data = metrics.into_iter().map(MetricDataPoint::from_model).collect();
+    let data = metrics
+        .into_iter()
+        .map(MetricDataPoint::from_model)
+        .collect();
 
     Ok(Json(MetricQueryResponse {
         name,
@@ -191,6 +197,7 @@ mod tests {
             agent: AgentConfig {
                 enabled: false,
                 collection_interval_secs: 60,
+                prometheus: domain::config::PrometheusAgentConfig::default(),
             },
             analytics: AnalyticsConfig {
                 enabled: false,
@@ -281,8 +288,8 @@ mod tests {
             limit: None,
         };
 
-        let result = query_metrics(State(state), Path("cpu_usage".to_string()), Query(params))
-            .await;
+        let result =
+            query_metrics(State(state), Path("cpu_usage".to_string()), Query(params)).await;
         assert!(result.is_ok());
 
         let response = result.unwrap().0;
@@ -305,8 +312,8 @@ mod tests {
             limit: None,
         };
 
-        let result = query_metrics(State(state), Path("cpu_usage".to_string()), Query(params))
-            .await;
+        let result =
+            query_metrics(State(state), Path("cpu_usage".to_string()), Query(params)).await;
         assert!(result.is_ok());
 
         let response = result.unwrap().0;
@@ -326,8 +333,8 @@ mod tests {
             limit: None,
         };
 
-        let result = query_metrics(State(state), Path("cpu_usage".to_string()), Query(params))
-            .await;
+        let result =
+            query_metrics(State(state), Path("cpu_usage".to_string()), Query(params)).await;
         assert!(result.is_err());
         assert!(matches!(result.unwrap_err(), ApiError::ValidationError(_)));
     }
@@ -345,8 +352,8 @@ mod tests {
             limit: None,
         };
 
-        let result = query_metrics(State(state), Path("cpu_usage".to_string()), Query(params))
-            .await;
+        let result =
+            query_metrics(State(state), Path("cpu_usage".to_string()), Query(params)).await;
         assert!(result.is_err());
         assert!(matches!(result.unwrap_err(), ApiError::ValidationError(_)));
     }
@@ -385,8 +392,8 @@ mod tests {
             limit: Some(1),
         };
 
-        let result = query_metrics(State(state), Path("cpu_usage".to_string()), Query(params))
-            .await;
+        let result =
+            query_metrics(State(state), Path("cpu_usage".to_string()), Query(params)).await;
         assert!(result.is_ok());
 
         let response = result.unwrap().0;

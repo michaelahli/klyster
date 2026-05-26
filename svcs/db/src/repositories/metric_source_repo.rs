@@ -27,14 +27,13 @@ impl<'a> MetricSourceRepository<'a> {
 
         let id = match self.pool {
             DatabasePool::Sqlite(pool) => {
-                let result = sqlx::query(
-                    "INSERT INTO metric_sources (name, type, config) VALUES (?, ?, ?)",
-                )
-                .bind(name)
-                .bind(source_type)
-                .bind(config)
-                .execute(pool)
-                .await?;
+                let result =
+                    sqlx::query("INSERT INTO metric_sources (name, type, config) VALUES (?, ?, ?)")
+                        .bind(name)
+                        .bind(source_type)
+                        .bind(config)
+                        .execute(pool)
+                        .await?;
                 result.last_insert_rowid()
             }
             DatabasePool::Postgres(pool) => {
@@ -250,6 +249,7 @@ mod tests {
             agent: AgentConfig {
                 enabled: false,
                 collection_interval_secs: 60,
+                prometheus: domain::config::PrometheusAgentConfig::default(),
             },
             analytics: AnalyticsConfig {
                 enabled: false,
@@ -275,7 +275,11 @@ mod tests {
         let repo = MetricSourceRepository::new(&pool);
 
         let source = repo
-            .create("test_prometheus", "prometheus", r#"{"url":"http://localhost:9090"}"#)
+            .create(
+                "test_prometheus",
+                "prometheus",
+                r#"{"url":"http://localhost:9090"}"#,
+            )
             .await
             .unwrap();
 

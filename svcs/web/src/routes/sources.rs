@@ -1,6 +1,8 @@
 //! Metric source CRUD endpoints.
 
-use crate::dto::sources::{CreateSourceRequest, SourceListResponse, SourceResponse, UpdateSourceRequest};
+use crate::dto::sources::{
+    CreateSourceRequest, SourceListResponse, SourceResponse, UpdateSourceRequest,
+};
 use crate::error::{ApiError, ApiResult};
 use crate::state::AppState;
 use axum::{
@@ -46,30 +48,33 @@ pub async fn create_source(
     }
 
     // Serialize config to JSON string
-    let config_str = serde_json::to_string(&req.config).map_err(|e| {
-        ApiError::ValidationError(format!("Invalid config JSON: {}", e))
-    })?;
+    let config_str = serde_json::to_string(&req.config)
+        .map_err(|e| ApiError::ValidationError(format!("Invalid config JSON: {}", e)))?;
 
     let source = repo
         .create(&req.name, &req.source_type, &config_str)
         .await?;
 
-    Ok((StatusCode::CREATED, Json(SourceResponse::from_model(source))))
+    Ok((
+        StatusCode::CREATED,
+        Json(SourceResponse::from_model(source)),
+    ))
 }
 
 /// List all metric sources.
 ///
 /// GET /api/v1/sources
-pub async fn list_sources(
-    State(state): State<AppState>,
-) -> ApiResult<Json<SourceListResponse>> {
+pub async fn list_sources(State(state): State<AppState>) -> ApiResult<Json<SourceListResponse>> {
     debug!("Listing metric sources");
 
     let repo = MetricSourceRepository::new(state.db());
     let sources = repo.list().await?;
 
     let total = sources.len();
-    let sources = sources.into_iter().map(SourceResponse::from_model).collect();
+    let sources = sources
+        .into_iter()
+        .map(SourceResponse::from_model)
+        .collect();
 
     Ok(Json(SourceListResponse { sources, total }))
 }
@@ -130,15 +135,16 @@ pub async fn update_source(
     }
 
     // Serialize config to JSON string
-    let config_str = serde_json::to_string(&req.config).map_err(|e| {
-        ApiError::ValidationError(format!("Invalid config JSON: {}", e))
-    })?;
+    let config_str = serde_json::to_string(&req.config)
+        .map_err(|e| ApiError::ValidationError(format!("Invalid config JSON: {}", e)))?;
 
     let source = repo
         .update(id, &req.name, &req.source_type, &config_str)
         .await
         .map_err(|e| match e {
-            db::DbError::NotFound(_) => ApiError::NotFound(format!("Source with id {} not found", id)),
+            db::DbError::NotFound(_) => {
+                ApiError::NotFound(format!("Source with id {} not found", id))
+            }
             _ => ApiError::Database(e),
         })?;
 
@@ -196,6 +202,7 @@ mod tests {
             agent: AgentConfig {
                 enabled: false,
                 collection_interval_secs: 60,
+                prometheus: domain::config::PrometheusAgentConfig::default(),
             },
             analytics: AnalyticsConfig {
                 enabled: false,

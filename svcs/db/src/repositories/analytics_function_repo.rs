@@ -182,7 +182,10 @@ impl<'a> AnalyticsFunctionRepository<'a> {
             .rows_affected(),
         };
 
-        info!(id = function.id, rows_affected, "Analytics function updated");
+        info!(
+            id = function.id,
+            rows_affected, "Analytics function updated"
+        );
         Ok(rows_affected)
     }
 
@@ -237,6 +240,7 @@ mod tests {
             agent: AgentConfig {
                 enabled: false,
                 collection_interval_secs: 60,
+                prometheus: domain::config::PrometheusAgentConfig::default(),
             },
             analytics: AnalyticsConfig {
                 enabled: false,
