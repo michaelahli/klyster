@@ -8,6 +8,8 @@ pub mod state;
 pub mod routes;
 /// Error types and handling.
 pub mod error;
+/// Data Transfer Objects.
+pub mod dto;
 
 pub use error::{ApiError, ApiResult};
 pub use server::{bind, build_router, run, ServerError};

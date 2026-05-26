@@ -24,6 +24,10 @@ pub enum DbError {
     /// IO error
     #[error("IO error: {0}")]
     Io(#[from] std::io::Error),
+
+    /// Resource not found
+    #[error("Not found: {0}")]
+    NotFound(String),
 }
 
 /// Result type for database operations.

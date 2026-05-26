@@ -1,9 +1,10 @@
 //! HTTP server setup and lifecycle management.
 
 use crate::error::{ApiError, ErrorResponse, ErrorDetail};
-use crate::routes::health;
+use crate::routes::{health, sources};
 use crate::state::AppState;
 use axum::{routing::get, Json, Router};
+use axum::routing::{delete, post, put};
 use axum::http::StatusCode;
 use serde_json::json;
 use std::net::SocketAddr;
@@ -51,11 +52,12 @@ pub fn build_router(state: AppState) -> Router {
         .allow_origin(Any);
 
     // API v1 routes
-    let api_v1 = Router::new();
-        // Future routes will be added here:
-        // .route("/sources", ...)
-        // .route("/metrics", ...)
-        // etc.
+    let api_v1 = Router::new()
+        .route("/sources", post(sources::create_source))
+        .route("/sources", get(sources::list_sources))
+        .route("/sources/:id", get(sources::get_source))
+        .route("/sources/:id", put(sources::update_source))
+        .route("/sources/:id", delete(sources::delete_source));
 
     Router::new()
         .route("/", get(root))
