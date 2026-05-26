@@ -4,6 +4,8 @@
 pub mod server;
 /// Shared application state used by request handlers.
 pub mod state;
+/// HTTP route handlers.
+pub mod routes;
 
 pub use server::{bind, build_router, run, ServerError};
 pub use state::AppState;

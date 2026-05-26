@@ -1,5 +1,6 @@
 //! HTTP server setup and lifecycle management.
 
+use crate::routes::health;
 use crate::state::AppState;
 use axum::{routing::get, Json, Router};
 use serde_json::json;
@@ -49,6 +50,8 @@ pub fn build_router(state: AppState) -> Router {
 
     Router::new()
         .route("/", get(root))
+        .route("/healthz", get(health::liveness))
+        .route("/readyz", get(health::readiness))
         .layer(TraceLayer::new_for_http())
         .layer(cors)
         .with_state(state)
