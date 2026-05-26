@@ -28,7 +28,6 @@ examples/
 
 # Misc
 *.log
-*.lock
 .env
 .env.*
 !.env.example
