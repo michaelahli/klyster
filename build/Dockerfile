@@ -11,7 +11,7 @@ RUN apt-get update && apt-get install -y \
 
 # Copy workspace files
 COPY Cargo.toml Cargo.lock ./
-COPY crates ./crates
+COPY svcs ./svcs
 
 # Build release binary
 RUN cargo build --release --bin klyster

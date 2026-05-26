@@ -1,12 +1,12 @@
 [workspace]
 resolver = "2"
 members = [
-    "crates/klyster",
-    "crates/domain",
-    "crates/db",
-    "crates/web",
-    "crates/agent",
-    "crates/analytics",
+    "svcs/klyster",
+    "svcs/domain",
+    "svcs/db",
+    "svcs/web",
+    "svcs/agent",
+    "svcs/analytics",
 ]
 
 [workspace.package]
@@ -29,11 +29,11 @@ must_use_candidate = "allow"
 missing_errors_doc = "allow"
 
 [workspace.dependencies]
-domain = { path = "crates/domain" }
-db = { path = "crates/db" }
-web = { path = "crates/web" }
-agent = { path = "crates/agent" }
-analytics = { path = "crates/analytics" }
+domain = { path = "svcs/domain" }
+db = { path = "svcs/db" }
+web = { path = "svcs/web" }
+agent = { path = "svcs/agent" }
+analytics = { path = "svcs/analytics" }
 
 anyhow = "1.0"
 thiserror = "1.0"
