@@ -1,8 +1,10 @@
 //! HTTP server setup and lifecycle management.
 
+use crate::error::{ApiError, ErrorResponse, ErrorDetail};
 use crate::routes::health;
 use crate::state::AppState;
 use axum::{routing::get, Json, Router};
+use axum::http::StatusCode;
 use serde_json::json;
 use std::net::SocketAddr;
 use std::time::Duration;
@@ -48,10 +50,19 @@ pub fn build_router(state: AppState) -> Router {
         .allow_headers(Any)
         .allow_origin(Any);
 
+    // API v1 routes
+    let api_v1 = Router::new();
+        // Future routes will be added here:
+        // .route("/sources", ...)
+        // .route("/metrics", ...)
+        // etc.
+
     Router::new()
         .route("/", get(root))
         .route("/healthz", get(health::liveness))
         .route("/readyz", get(health::readiness))
+        .nest("/api/v1", api_v1)
+        .fallback(handler_404)
         .layer(TraceLayer::new_for_http())
         .layer(cors)
         .with_state(state)
@@ -62,6 +73,17 @@ async fn root() -> Json<serde_json::Value> {
         "name": "klyster",
         "version": env!("CARGO_PKG_VERSION"),
     }))
+}
+
+/// 404 handler for unknown routes.
+async fn handler_404() -> (StatusCode, Json<ErrorResponse>) {
+    let response = ErrorResponse {
+        error: ErrorDetail {
+            code: "not_found".to_string(),
+            message: "The requested resource was not found".to_string(),
+        },
+    };
+    (StatusCode::NOT_FOUND, Json(response))
 }
 
 /// Resolve the configured bind address.
@@ -135,12 +157,13 @@ where
 mod tests {
     use super::*;
     use db::DatabasePool;
-    use domain::config::{
+use domain::config::{
         AgentConfig, AnalyticsConfig, DatabaseConfig, LoggingConfig, MetricsConfig,
         RetentionConfig, TelemetryConfig, WebConfig,
     };
     use domain::Config;
     use std::sync::Arc;
+    use tower::ServiceExt;
 
     fn test_config(port: u16) -> Config {
         Config {
@@ -228,5 +251,29 @@ mod tests {
     fn invalid_address_is_reported() {
         let result = resolve_addr("not a host", 8080);
         assert!(result.is_err());
+    }
+
+    #[tokio::test]
+    async fn handler_404_returns_json_error() {
+        let state = test_state(0).await;
+        let router = build_router(state);
+
+        let response = router
+            .oneshot(
+                axum::http::Request::builder()
+                    .uri("/nonexistent")
+                    .body(axum::body::Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(response.status(), StatusCode::NOT_FOUND);
+
+        let body = axum::body::to_bytes(response.into_body(), usize::MAX)
+            .await
+            .unwrap();
+        let json: serde_json::Value = serde_json::from_slice(&body).unwrap();
+        assert_eq!(json["error"]["code"], "not_found");
     }
 }

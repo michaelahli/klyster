@@ -6,6 +6,9 @@ pub mod server;
 pub mod state;
 /// HTTP route handlers.
 pub mod routes;
+/// Error types and handling.
+pub mod error;
 
+pub use error::{ApiError, ApiResult};
 pub use server::{bind, build_router, run, ServerError};
 pub use state::AppState;
