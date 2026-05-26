@@ -1,0 +1,174 @@
+syntax = "proto3";
+
+package analytics;
+
+// Analytics service for forecasting and function execution.
+service AnalyticsService {
+  // Run a forecast using specified function and data.
+  rpc RunForecast(ForecastRequest) returns (ForecastResponse);
+  
+  // Validate custom function code.
+  rpc ValidateFunction(FunctionCode) returns (ValidationResult);
+  
+  // List available predefined functions.
+  rpc ListPredefinedFunctions(Empty) returns (FunctionList);
+  
+  // Health check for the analytics service.
+  rpc HealthCheck(Empty) returns (HealthStatus);
+}
+
+// Empty message for requests with no parameters.
+message Empty {}
+
+// Single metric data point.
+message MetricDataPoint {
+  // Timestamp in Unix epoch seconds.
+  int64 timestamp = 1;
+  
+  // Metric value.
+  double value = 2;
+  
+  // Optional labels for the metric.
+  map<string, string> labels = 3;
+}
+
+// Request to run a forecast.
+message ForecastRequest {
+  // Function name (e.g., "linear_regression", "arima", "seasonal_decomposition").
+  string function_name = 1;
+  
+  // Historical metric data points.
+  repeated MetricDataPoint data = 2;
+  
+  // Forecast horizon (number of future points to predict).
+  int32 horizon = 3;
+  
+  // Function-specific parameters as JSON string.
+  string parameters = 4;
+  
+  // Optional custom function code (for custom functions).
+  optional string custom_code = 5;
+}
+
+// Response containing forecast results.
+message ForecastResponse {
+  // Forecast data points.
+  repeated ForecastPoint points = 1;
+  
+  // Function execution metadata.
+  ForecastMetadata metadata = 2;
+}
+
+// Single forecast point with confidence intervals.
+message ForecastPoint {
+  // Timestamp in Unix epoch seconds.
+  int64 timestamp = 1;
+  
+  // Predicted value.
+  double predicted_value = 2;
+  
+  // Lower bound of confidence interval.
+  double lower_bound = 3;
+  
+  // Upper bound of confidence interval.
+  double upper_bound = 4;
+}
+
+// Metadata about forecast execution.
+message ForecastMetadata {
+  // Function name used.
+  string function_name = 1;
+  
+  // Execution time in milliseconds.
+  int64 execution_time_ms = 2;
+  
+  // Model parameters used (JSON string).
+  string parameters = 3;
+  
+  // Model quality metrics (e.g., R², RMSE).
+  map<string, double> quality_metrics = 4;
+}
+
+// Custom function code for validation or execution.
+message FunctionCode {
+  // Function name.
+  string name = 1;
+  
+  // Python function code.
+  string code = 2;
+}
+
+// Result of function validation.
+message ValidationResult {
+  // Whether the function is valid.
+  bool valid = 1;
+  
+  // Error message if invalid.
+  optional string error_message = 2;
+  
+  // Warnings (non-fatal issues).
+  repeated string warnings = 3;
+}
+
+// List of available functions.
+message FunctionList {
+  // Available functions.
+  repeated FunctionInfo functions = 1;
+}
+
+// Information about a function.
+message FunctionInfo {
+  // Function name.
+  string name = 1;
+  
+  // Function type.
+  FunctionType type = 2;
+  
+  // Human-readable description.
+  string description = 3;
+  
+  // Required parameters (JSON schema).
+  string parameters_schema = 4;
+}
+
+// Function type enumeration.
+enum FunctionType {
+  // Unknown or unspecified.
+  FUNCTION_TYPE_UNSPECIFIED = 0;
+  
+  // Predefined function (built-in).
+  FUNCTION_TYPE_PREDEFINED = 1;
+  
+  // Custom user-defined function.
+  FUNCTION_TYPE_CUSTOM = 2;
+}
+
+// Health status of the analytics service.
+message HealthStatus {
+  // Overall health status.
+  HealthState status = 1;
+  
+  // Python version.
+  string python_version = 2;
+  
+  // Installed packages and versions.
+  map<string, string> packages = 3;
+  
+  // Additional details.
+  optional string message = 4;
+}
+
+// Health state enumeration.
+enum HealthState {
+  // Unknown state.
+  HEALTH_STATE_UNSPECIFIED = 0;
+  
+  // Service is healthy.
+  HEALTH_STATE_HEALTHY = 1;
+  
+  // Service is degraded but operational.
+  HEALTH_STATE_DEGRADED = 2;
+  
+  // Service is unhealthy.
+  HEALTH_STATE_UNHEALTHY = 3;
+}
