@@ -1,11 +1,13 @@
 //! HTTP server setup and lifecycle management.
 
 use crate::error::{ErrorResponse, ErrorDetail};
-use crate::routes::{health, metrics, sources};
+use crate::middleware::apm_logging_middleware;
+use crate::routes::{analytics, config, forecasts, health, metrics, recommendations, resource_groups, sources, ws};
 use crate::state::AppState;
 use axum::{routing::get, Json, Router};
 use axum::routing::{delete, post, put};
 use axum::http::StatusCode;
+use axum::middleware;
 use serde_json::json;
 use std::net::SocketAddr;
 use std::time::Duration;
@@ -13,6 +15,8 @@ use tokio::net::TcpListener;
 use tower_http::cors::{Any, CorsLayer};
 use tower_http::trace::TraceLayer;
 use tracing::{error, info};
+use utoipa::OpenApi;
+use utoipa_swagger_ui::SwaggerUi;
 
 /// Errors that can occur while starting or running the HTTP server.
 #[derive(Debug, thiserror::Error)]
@@ -60,14 +64,40 @@ pub fn build_router(state: AppState) -> Router {
         .route("/sources/:id", delete(sources::delete_source))
         .route("/metrics", get(metrics::list_metric_names))
         .route("/metrics/latest", get(metrics::get_latest_metrics))
-        .route("/metrics/:name", get(metrics::query_metrics));
+        .route("/metrics/:name", get(metrics::query_metrics))
+        .route("/resource-groups", post(resource_groups::create_group))
+        .route("/resource-groups", get(resource_groups::list_groups))
+        .route("/resource-groups/:id", get(resource_groups::get_group))
+        .route("/resource-groups/:id", put(resource_groups::update_group))
+        .route("/resource-groups/:id", delete(resource_groups::delete_group))
+        .route("/resource-groups/:id/scaling-targets", post(resource_groups::set_scaling_target))
+        .route("/resource-groups/:id/resources", get(resource_groups::list_resources))
+        .route("/forecasts", get(forecasts::list_forecasts))
+        .route("/forecasts/trigger", post(forecasts::trigger_forecast))
+        .route("/forecasts/:id", get(forecasts::get_forecast))
+        .route("/recommendations", get(recommendations::list_recommendations))
+        .route("/recommendations/pending", get(recommendations::list_pending_recommendations))
+        .route("/recommendations/:id/approve", post(recommendations::approve_recommendation))
+        .route("/recommendations/:id/dismiss", post(recommendations::dismiss_recommendation))
+        .route("/analytics/functions", get(analytics::list_functions))
+        .route("/analytics/functions", post(analytics::create_function))
+        .route("/analytics/functions/:id", get(analytics::get_function))
+        .route("/analytics/functions/:id", put(analytics::update_function))
+        .route("/analytics/functions/:id", delete(analytics::delete_function))
+        .route("/analytics/functions/:id/test", post(analytics::test_function))
+        .route("/config", get(config::get_config))
+        .route("/config", axum::routing::patch(config::update_config))
+        .route("/ws/metrics", get(ws::ws_metrics_handler));
 
     Router::new()
         .route("/", get(root))
         .route("/healthz", get(health::liveness))
         .route("/readyz", get(health::readiness))
+        .route("/metrics", get(metrics_endpoint))
         .nest("/api/v1", api_v1)
+        .merge(SwaggerUi::new("/api/docs").url("/api/docs/openapi.json", crate::docs::ApiDoc::openapi()))
         .fallback(handler_404)
+        .layer(middleware::from_fn(apm_logging_middleware))
         .layer(TraceLayer::new_for_http())
         .layer(cors)
         .with_state(state)
@@ -78,6 +108,12 @@ async fn root() -> Json<serde_json::Value> {
         "name": "klyster",
         "version": env!("CARGO_PKG_VERSION"),
     }))
+}
+
+/// Prometheus metrics endpoint.
+async fn metrics_endpoint() -> Result<String, (StatusCode, String)> {
+    crate::metrics::gather_metrics()
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e))
 }
 
 /// 404 handler for unknown routes.

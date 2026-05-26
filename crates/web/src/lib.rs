@@ -10,6 +10,14 @@ pub mod routes;
 pub mod error;
 /// Data Transfer Objects.
 pub mod dto;
+/// Prometheus metrics.
+pub mod metrics;
+/// HTTP middleware.
+pub mod middleware;
+/// Custom extractors.
+pub mod extractors;
+/// OpenAPI documentation.
+pub mod docs;
 
 pub use error::{ApiError, ApiResult};
 pub use server::{bind, build_router, run, ServerError};
