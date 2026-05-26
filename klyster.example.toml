@@ -41,6 +41,9 @@ enabled = false
 # gRPC endpoint for Python analytics sidecar
 grpc_endpoint = "http://127.0.0.1:50051"
 
+# Custom Python executable path (optional)
+# python_path = "/usr/local/bin/python3.11"
+
 [logging]
 # Log format: "json", "logfmt", or "text"
 format = "json"

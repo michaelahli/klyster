@@ -123,6 +123,9 @@ pub struct AnalyticsConfig {
     /// gRPC endpoint for Python analytics sidecar
     #[serde(default = "default_analytics_endpoint")]
     pub grpc_endpoint: String,
+    /// Custom Python executable path (optional)
+    #[serde(default)]
+    pub python_path: Option<String>,
 }
 
 /// Logging configuration.
