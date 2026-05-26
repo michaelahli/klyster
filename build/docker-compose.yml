@@ -1,0 +1,114 @@
+version: '3.8'
+
+services:
+  # Klyster API server
+  klyster:
+    image: klyster:latest
+    container_name: klyster
+    build:
+      context: ..
+      dockerfile: build/Dockerfile
+    environment:
+      # Database configuration
+      KLYSTER_DATABASE__DB_TYPE: postgres
+      KLYSTER_DATABASE__POSTGRES_URL: postgresql://klyster:klyster_pass@postgres:5432/klyster
+      KLYSTER_DATABASE__POOL_SIZE: 20
+      # Web configuration
+      KLYSTER_WEB__HOST: 0.0.0.0
+      KLYSTER_WEB__PORT: 8080
+      # Logging
+      KLYSTER_LOGGING__LEVEL: info
+      KLYSTER_LOGGING__FORMAT: json
+    ports:
+      - "8080:8080"
+    volumes:
+      - klyster_data:/app/data
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/healthz"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped
+    networks:
+      - klyster-network
+
+  # PostgreSQL database
+  postgres:
+    image: postgres:16-alpine
+    container_name: klyster-postgres
+    environment:
+      POSTGRES_USER: klyster
+      POSTGRES_PASSWORD: klyster_pass
+      POSTGRES_DB: klyster
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init/init-db.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U klyster"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - klyster-network
+
+  # Prometheus for metrics
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: klyster-prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.enable-lifecycle'
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    depends_on:
+      - klyster
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:9090/-/healthy"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    restart: unless-stopped
+    networks:
+      - klyster-network
+
+  # Grafana for visualization (optional)
+  grafana:
+    image: grafana/grafana:latest
+    container_name: klyster-grafana
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/datasources.yml:/etc/grafana/provisioning/datasources/datasources.yml:ro
+    depends_on:
+      - prometheus
+    restart: unless-stopped
+    networks:
+      - klyster-network
+    profiles:
+      - monitoring
+
+volumes:
+  klyster_data:
+  postgres_data:
+  prometheus_data:
+  grafana_data:
+
+networks:
+  klyster-network:
+    driver: bridge

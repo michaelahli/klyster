@@ -1,0 +1,39 @@
+# Klyster Configuration
+# This is the default configuration for containerized deployment
+
+[database]
+db_type = "sqlite"
+sqlite_path = "/app/data/klyster.db"
+pool_size = 10
+wal_mode = true
+
+[web]
+host = "0.0.0.0"
+port = 8080
+workers = 4
+
+[agent]
+enabled = false
+collection_interval_secs = 60
+
+[analytics]
+enabled = false
+grpc_endpoint = "http://localhost:50051"
+
+[logging]
+level = "info"
+format = "json"
+outputs = ["stdout"]
+
+[telemetry]
+enabled = false
+otlp_endpoint = ""
+
+[metrics]
+enabled = true
+prometheus_port = 8080
+
+[retention]
+metrics_days = 7
+forecasts_days = 30
+recommendations_days = 90
