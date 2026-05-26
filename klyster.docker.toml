@@ -1,0 +1,48 @@
+# Klyster Docker Configuration
+# Optimized for containerized deployment
+
+[database]
+# Use SQLite for single container, PostgreSQL for distributed
+db_type = "sqlite"
+sqlite_path = "/data/klyster.db"
+pool_size = 5
+
+[web]
+# Bind to all interfaces for container networking
+host = "0.0.0.0"
+port = 8080
+workers = 4
+
+[agent]
+enabled = false
+collection_interval_secs = 60
+
+[analytics]
+enabled = false
+grpc_endpoint = "http://analytics:50051"
+
+[logging]
+format = "json"
+level = "info"
+
+# Log to stdout for container logging (Docker logs)
+[[logging.outputs]]
+type = "stdout"
+
+[logging]
+format = "json"
+level = "${LOG_LEVEL:-info}"
+
+[telemetry]
+enabled = false
+
+[metrics]
+enabled = true
+endpoint = "/metrics"
+
+[retention]
+metrics_days = 90
+forecasts_days = 180
+recommendations_days = 365
+audit_logs_days = 730
+cleanup_schedule = "0 2 * * *"

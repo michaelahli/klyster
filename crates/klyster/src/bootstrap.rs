@@ -1,9 +1,13 @@
 //! Application bootstrap and component orchestration.
 
+use std::sync::Arc;
+use std::time::Duration;
+
 use db::{run_migrations, DatabasePool};
 use domain::shutdown::ShutdownCoordinator;
 use domain::Config;
 use tracing::{error, info};
+use web::AppState;
 
 /// Application components that can be started.
 #[derive(Debug, Clone)]
@@ -49,6 +53,10 @@ pub async fn bootstrap(
     })?;
     info!("Database migrations completed");
 
+    // Build shared application state
+    let config = Arc::new(config);
+    let app_state = AppState::new(pool.clone(), Arc::clone(&config));
+
     // Create shutdown coordinator
     let shutdown = ShutdownCoordinator::default();
     let shutdown_signal = shutdown.signal();
@@ -59,14 +67,16 @@ pub async fn bootstrap(
     if components.web {
         info!("Starting web component");
         let mut rx = shutdown_signal.subscribe();
+        let web_state = app_state.clone();
         let handle = tokio::spawn(async move {
-            tokio::select! {
-                () = run_web_component() => {
-                    info!("Web component stopped");
-                }
-                _ = rx.recv() => {
-                    info!("Web component received shutdown signal");
-                }
+            if let Err(e) = run_web_component(web_state, async move {
+                let _ = rx.recv().await;
+            })
+            .await
+            {
+                error!(error = %e, "Web component failed");
+            } else {
+                info!("Web component stopped");
             }
         });
         handles.push(handle);
@@ -138,13 +148,17 @@ pub async fn bootstrap(
     Ok(())
 }
 
-/// Run web component (placeholder).
-async fn run_web_component() {
-    info!("Web component running");
-    // Placeholder: actual implementation will be in M2
-    loop {
-        tokio::time::sleep(tokio::time::Duration::from_secs(1)).await;
-    }
+/// Run the web component until shutdown is signalled.
+async fn run_web_component<F>(
+    state: AppState,
+    shutdown: F,
+) -> Result<(), Box<dyn std::error::Error + Send + Sync>>
+where
+    F: std::future::Future<Output = ()> + Send + 'static,
+{
+    let listener = web::bind(&state).await?;
+    web::run(listener, state, shutdown, Duration::from_secs(15)).await?;
+    Ok(())
 }
 
 /// Run agent component (placeholder).
