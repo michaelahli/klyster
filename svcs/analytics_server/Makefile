@@ -26,11 +26,12 @@ venv:
 codegen:
 	@echo "Generating Python protobuf code..."
 	$(PYTHON) -m grpc_tools.protoc \
-		-I../proto \
+		-I../../proto \
 		--python_out=. \
 		--grpc_python_out=. \
 		--pyi_out=. \
-		../proto/analytics.proto
+		../../proto/analytics.proto
+	@sed -i.bak 's/^import analytics_pb2 as analytics__pb2$$/from analytics_server import analytics_pb2 as analytics__pb2/' analytics_pb2_grpc.py && rm -f analytics_pb2_grpc.py.bak
 	@echo "Protobuf code generated successfully"
 
 install: venv
@@ -40,7 +41,7 @@ install: venv
 
 run:
 	@echo "Starting analytics server..."
-	cd .. && PYTHONPATH=. $(PYTHON) -m analytics_server
+	cd ../.. && PYTHONPATH=svcs $(PYTHON) -m analytics_server
 
 test:
 	@echo "Running tests..."

@@ -46,7 +46,7 @@ data/
 **/__pycache__/
 **/*.pyc
 **/.pytest_cache/
-analytics_server/venv/
-analytics_server/analytics_pb2.py
-analytics_server/analytics_pb2_grpc.py
-analytics_server/analytics_pb2.pyi
+svcs/analytics_server/venv/
+svcs/analytics_server/analytics_pb2.py
+svcs/analytics_server/analytics_pb2_grpc.py
+svcs/analytics_server/analytics_pb2.pyi

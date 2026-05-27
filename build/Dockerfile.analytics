@@ -14,12 +14,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 # Install dependencies into an isolated prefix so we can copy them to the runtime stage
-COPY analytics_server/requirements.txt ./requirements.txt
+COPY svcs/analytics_server/requirements.txt ./requirements.txt
 RUN pip install --no-cache-dir --prefix=/install -r requirements.txt
 
 # Copy proto definition and analytics server source
 COPY proto /build/proto
-COPY analytics_server /build/analytics_server
+COPY svcs/analytics_server /build/analytics_server
 
 # Generate Python gRPC bindings from the proto file (uses base-image python
 # with PYTHONPATH pointing at the prefix-installed grpcio_tools)
