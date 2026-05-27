@@ -404,6 +404,7 @@ mod tests {
             analytics: domain::config::AnalyticsConfig {
                 enabled: false,
                 grpc_endpoint: "http://localhost:50051".to_string(),
+                python_path: None,
             },
             logging: domain::config::LoggingConfig::default(),
             telemetry: domain::config::TelemetryConfig::default(),

@@ -16,6 +16,13 @@ thiserror = "1.0"
 tracing = "0.1"
 tonic = "0.12"
 prost = "0.13"
+tokio = { workspace = true }
+tower = { workspace = true }
+hyper-util = { version = "0.1", features = ["tokio"] }
 
 [build-dependencies]
 tonic-build = "0.12"
+
+[dev-dependencies]
+tokio-stream = { version = "0.1", features = ["net"] }
+tempfile = "3.10"

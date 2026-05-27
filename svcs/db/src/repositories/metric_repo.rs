@@ -332,6 +332,7 @@ mod tests {
             analytics: AnalyticsConfig {
                 enabled: false,
                 grpc_endpoint: "http://localhost:50051".to_string(),
+                python_path: None,
             },
             logging: LoggingConfig {
                 level: "info".to_string(),

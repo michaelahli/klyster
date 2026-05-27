@@ -16,7 +16,7 @@ pub enum RuntimeError {
     #[error("Python version {found} is too old, requires 3.11+")]
     VersionTooOld {
         /// Found version string.
-        found: String
+        found: String,
     },
 
     /// Failed to execute Python command.
@@ -27,7 +27,7 @@ pub enum RuntimeError {
     #[error("Required Python package '{package}' is not installed")]
     MissingPackage {
         /// Package name.
-        package: String
+        package: String,
     },
 
     /// Failed to parse Python output.
@@ -67,7 +67,7 @@ impl PythonRuntime {
     pub fn detect(custom_path: Option<&str>) -> Result<Self, RuntimeError> {
         let executable = Self::find_executable(custom_path)?;
         let (version, version_major, version_minor) = Self::check_version(&executable)?;
-        
+
         info!(
             executable = %executable.display(),
             version = %version,
@@ -140,12 +140,12 @@ impl PythonRuntime {
             )));
         }
 
-        let major: u32 = parts[0]
-            .parse()
-            .map_err(|_| RuntimeError::ParseError(format!("Invalid major version: {}", parts[0])))?;
-        let minor: u32 = parts[1]
-            .parse()
-            .map_err(|_| RuntimeError::ParseError(format!("Invalid minor version: {}", parts[1])))?;
+        let major: u32 = parts[0].parse().map_err(|_| {
+            RuntimeError::ParseError(format!("Invalid major version: {}", parts[0]))
+        })?;
+        let minor: u32 = parts[1].parse().map_err(|_| {
+            RuntimeError::ParseError(format!("Invalid minor version: {}", parts[1]))
+        })?;
 
         if (major, minor) < MIN_PYTHON_VERSION {
             return Err(RuntimeError::VersionTooOld {
@@ -164,8 +164,7 @@ impl PythonRuntime {
             if !self.check_package(package)? {
                 error!(
                     package = package,
-                    "Required Python package not found. Install with: pip install {}",
-                    package
+                    "Required Python package not found. Install with: pip install {}", package
                 );
                 return Err(RuntimeError::MissingPackage {
                     package: (*package).to_string(),
