@@ -2,6 +2,7 @@
 
 pub mod client;
 pub mod error;
+pub mod forecast_handler;
 pub mod process;
 pub mod runtime;
 pub mod serialization;
@@ -15,6 +16,9 @@ pub mod proto {
 
 pub use client::{AnalyticsClient, AnalyticsEndpoint, ClientConfig};
 pub use error::AnalyticsError;
+pub use forecast_handler::{
+    persist as persist_forecast, ForecastContext, ForecastHandlerError, PersistedForecast,
+};
 pub use process::{ProcessConfig, SidecarProcess};
 pub use runtime::{PythonRuntime, RuntimeError};
 pub use serialization::{

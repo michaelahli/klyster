@@ -45,10 +45,12 @@ name = "analytics"
 version = "0.1.0"
 dependencies = [
  "chrono",
+ "db",
  "domain",
  "hyper-util",
  "nix",
  "prost",
+ "serde_json",
  "tempfile",
  "thiserror 1.0.69",
  "tokio",
