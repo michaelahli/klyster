@@ -19,6 +19,7 @@ prost = "0.13"
 tokio = { workspace = true }
 tower = { workspace = true }
 hyper-util = { version = "0.1", features = ["tokio"] }
+nix = { version = "0.29", features = ["signal"] }
 
 [build-dependencies]
 tonic-build = "0.12"
