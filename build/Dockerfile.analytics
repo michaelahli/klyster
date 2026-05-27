@@ -1,0 +1,72 @@
+# Multi-stage build for Klyster Analytics Server (Python sidecar)
+FROM python:3.11-slim AS builder
+
+WORKDIR /build
+
+# Install build dependencies for compiled wheels (numpy, pandas, statsmodels, pmdarima)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    gcc \
+    g++ \
+    gfortran \
+    libopenblas-dev \
+    liblapack-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install dependencies into an isolated prefix so we can copy them to the runtime stage
+COPY analytics_server/requirements.txt ./requirements.txt
+RUN pip install --no-cache-dir --prefix=/install -r requirements.txt
+
+# Copy proto definition and analytics server source
+COPY proto /build/proto
+COPY analytics_server /build/analytics_server
+
+# Generate Python gRPC bindings from the proto file (uses base-image python
+# with PYTHONPATH pointing at the prefix-installed grpcio_tools)
+RUN PYTHONPATH=/install/lib/python3.11/site-packages \
+    python -m grpc_tools.protoc \
+        -I/build/proto \
+        --python_out=/build/analytics_server \
+        --grpc_python_out=/build/analytics_server \
+        --pyi_out=/build/analytics_server \
+        /build/proto/analytics.proto \
+    && sed -i 's/^import analytics_pb2 as analytics__pb2$/from analytics_server import analytics_pb2 as analytics__pb2/' \
+        /build/analytics_server/analytics_pb2_grpc.py
+
+# Runtime stage
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# Runtime libraries required by numpy/scipy/statsmodels
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libopenblas0 \
+    liblapack3 \
+    libgomp1 \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create non-root user
+RUN useradd -m -u 1000 analytics && \
+    mkdir -p /var/run/klyster && \
+    chown -R analytics:analytics /app /var/run/klyster
+
+# Copy installed dependencies from builder
+COPY --from=builder /install /usr/local
+
+# Copy server sources (with generated proto code)
+COPY --from=builder /build/analytics_server /app/analytics_server
+
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONPATH=/app
+
+USER analytics
+
+EXPOSE 50051
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
+    CMD python -c "import grpc; \
+ch = grpc.insecure_channel('127.0.0.1:50051'); \
+grpc.channel_ready_future(ch).result(timeout=3)" || exit 1
+
+CMD ["python", "-m", "analytics_server", "--host", "0.0.0.0", "--port", "50051"]

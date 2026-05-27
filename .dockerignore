@@ -41,3 +41,12 @@ Dockerfile*
 klyster.toml
 klyster.db
 data/
+
+# Python local dev artifacts
+**/__pycache__/
+**/*.pyc
+**/.pytest_cache/
+analytics_server/venv/
+analytics_server/analytics_pb2.py
+analytics_server/analytics_pb2_grpc.py
+analytics_server/analytics_pb2.pyi

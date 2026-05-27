@@ -3,15 +3,17 @@ FROM rust:1.90-slim as builder
 
 WORKDIR /build
 
-# Install build dependencies
+# Install build dependencies (protoc is required by tonic-build for the analytics crate)
 RUN apt-get update && apt-get install -y \
     pkg-config \
     libssl-dev \
+    protobuf-compiler \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy workspace files
 COPY Cargo.toml Cargo.lock ./
 COPY svcs ./svcs
+COPY proto ./proto
 
 # Build release binary
 RUN cargo build --release --bin klyster
