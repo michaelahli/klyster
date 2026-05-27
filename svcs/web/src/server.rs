@@ -59,6 +59,7 @@ pub fn build_router(state: AppState) -> Router {
 
     // API v1 routes
     let api_v1 = Router::new()
+        .route("/info", get(root))
         .route("/sources", post(sources::create_source))
         .route("/sources", get(sources::list_sources))
         .route("/sources/:id", get(sources::get_source))
@@ -116,10 +117,10 @@ pub fn build_router(state: AppState) -> Router {
         )
         .route("/config", get(config::get_config))
         .route("/config", axum::routing::patch(config::update_config))
-        .route("/ws/metrics", get(ws::ws_metrics_handler));
+        .route("/ws/metrics", get(ws::ws_metrics_handler))
+        .fallback(handler_404);
 
     Router::new()
-        .route("/", get(root))
         .route("/healthz", get(health::liveness))
         .route("/readyz", get(health::readiness))
         .route("/metrics", get(metrics_endpoint))
@@ -128,7 +129,7 @@ pub fn build_router(state: AppState) -> Router {
             SwaggerUi::new("/api/docs")
                 .url("/api/docs/openapi.json", crate::docs::ApiDoc::openapi()),
         )
-        .fallback(handler_404)
+        .fallback_service(crate::static_files::router())
         .layer(middleware::from_fn(apm_logging_middleware))
         .layer(TraceLayer::new_for_http())
         .layer(cors)
@@ -328,14 +329,42 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn handler_404_returns_json_error() {
+    async fn unknown_ui_path_falls_back_to_index_html() {
         let state = test_state(0).await;
         let router = build_router(state);
 
         let response = router
             .oneshot(
                 axum::http::Request::builder()
-                    .uri("/nonexistent")
+                    .uri("/dashboard/anything")
+                    .body(axum::body::Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(response.status(), StatusCode::OK);
+        let content_type = response
+            .headers()
+            .get(axum::http::header::CONTENT_TYPE)
+            .and_then(|v| v.to_str().ok())
+            .unwrap_or_default()
+            .to_string();
+        assert!(
+            content_type.starts_with("text/html"),
+            "expected SPA fallback HTML, got {content_type}"
+        );
+    }
+
+    #[tokio::test]
+    async fn unknown_api_path_returns_json_error() {
+        let state = test_state(0).await;
+        let router = build_router(state);
+
+        let response = router
+            .oneshot(
+                axum::http::Request::builder()
+                    .uri("/api/v1/nonexistent")
                     .body(axum::body::Body::empty())
                     .unwrap(),
             )
@@ -343,11 +372,54 @@ mod tests {
             .unwrap();
 
         assert_eq!(response.status(), StatusCode::NOT_FOUND);
+    }
 
+    #[tokio::test]
+    async fn root_endpoint_returns_index_html() {
+        let state = test_state(0).await;
+        let router = build_router(state);
+
+        let response = router
+            .oneshot(
+                axum::http::Request::builder()
+                    .uri("/")
+                    .body(axum::body::Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(response.status(), StatusCode::OK);
+        let content_type = response
+            .headers()
+            .get(axum::http::header::CONTENT_TYPE)
+            .and_then(|v| v.to_str().ok())
+            .unwrap_or_default()
+            .to_string();
+        assert!(content_type.starts_with("text/html"));
+    }
+
+    #[tokio::test]
+    async fn api_info_returns_name_and_version() {
+        let state = test_state(0).await;
+        let router = build_router(state);
+
+        let response = router
+            .oneshot(
+                axum::http::Request::builder()
+                    .uri("/api/v1/info")
+                    .body(axum::body::Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(response.status(), StatusCode::OK);
         let body = axum::body::to_bytes(response.into_body(), usize::MAX)
             .await
             .unwrap();
         let json: serde_json::Value = serde_json::from_slice(&body).unwrap();
-        assert_eq!(json["error"]["code"], "not_found");
+        assert_eq!(json["name"], "klyster");
+        assert!(json["version"].is_string());
     }
 }

@@ -18,6 +18,8 @@ pub mod routes;
 pub mod server;
 /// Shared application state used by request handlers.
 pub mod state;
+/// Embedded UI bundle and SPA fallback.
+pub mod static_files;
 
 pub use error::{ApiError, ApiResult};
 pub use server::{bind, build_router, run, ServerError};
