@@ -11,6 +11,7 @@ import grpc
 
 from seer import analytics_pb2, analytics_pb2_grpc
 from seer.functions import PREDEFINED, get_function
+from seer.serialization import data_points_to_pairs
 
 
 class AnalyticsServiceImpl(analytics_pb2_grpc.AnalyticsServiceServicer):
@@ -39,7 +40,7 @@ class AnalyticsServiceImpl(analytics_pb2_grpc.AnalyticsServiceServicer):
             return analytics_pb2.ForecastResponse()
 
         params = _parse_parameters(request.parameters)
-        data = [(point.timestamp, point.value) for point in request.data]
+        data = data_points_to_pairs(request.data)
 
         started = time.perf_counter()
         try:

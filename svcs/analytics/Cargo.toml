@@ -12,6 +12,8 @@ description = "Analytics orchestration and Python sidecar IPC for Klyster"
 workspace = true
 
 [dependencies]
+domain.workspace = true
+chrono.workspace = true
 thiserror = "1.0"
 tracing = "0.1"
 tonic = "0.12"
