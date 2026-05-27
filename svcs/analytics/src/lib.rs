@@ -1,9 +1,11 @@
 //! Analytics orchestration and Python sidecar IPC for Klyster.
 
+pub mod circuit_breaker;
 pub mod client;
 pub mod error;
 pub mod forecast_handler;
 pub mod process;
+pub mod resilient_client;
 pub mod runtime;
 pub mod serialization;
 pub mod supervisor;
@@ -14,12 +16,14 @@ pub mod proto {
     tonic::include_proto!("analytics");
 }
 
+pub use circuit_breaker::{CircuitBreaker, CircuitBreakerConfig, CircuitState};
 pub use client::{AnalyticsClient, AnalyticsEndpoint, ClientConfig};
 pub use error::AnalyticsError;
 pub use forecast_handler::{
     persist as persist_forecast, ForecastContext, ForecastHandlerError, PersistedForecast,
 };
 pub use process::{ProcessConfig, SidecarProcess};
+pub use resilient_client::{ResilientClient, ResilientConfig, RetryConfig};
 pub use runtime::{PythonRuntime, RuntimeError};
 pub use serialization::{
     data_points_to_metrics, metric_to_data_point, metrics_to_data_points, SerializationError,

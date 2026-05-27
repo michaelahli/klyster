@@ -109,9 +109,11 @@ impl AnalyticsClient {
         &self,
         request: ForecastRequest,
     ) -> Result<ForecastResponse, AnalyticsError> {
+        let timeout = self.config.forecast_timeout;
         let mut req = Request::new(request);
-        req.set_timeout(self.config.forecast_timeout);
-        let response = self.inner.clone().run_forecast(req).await?;
+        req.set_timeout(timeout);
+        let mut client = self.inner.clone();
+        let response = with_timeout("run_forecast", timeout, client.run_forecast(req)).await?;
         Ok(response.into_inner())
     }
 
@@ -120,26 +122,67 @@ impl AnalyticsClient {
         &self,
         request: FunctionCode,
     ) -> Result<ValidationResult, AnalyticsError> {
+        let timeout = self.config.forecast_timeout;
         let mut req = Request::new(request);
-        req.set_timeout(self.config.forecast_timeout);
-        let response = self.inner.clone().validate_function(req).await?;
+        req.set_timeout(timeout);
+        let mut client = self.inner.clone();
+        let response =
+            with_timeout("validate_function", timeout, client.validate_function(req)).await?;
         Ok(response.into_inner())
     }
 
     /// List the predefined forecasting functions exposed by the sidecar.
     pub async fn list_predefined_functions(&self) -> Result<FunctionList, AnalyticsError> {
+        let timeout = self.config.forecast_timeout;
         let mut req = Request::new(Empty {});
-        req.set_timeout(self.config.forecast_timeout);
-        let response = self.inner.clone().list_predefined_functions(req).await?;
+        req.set_timeout(timeout);
+        let mut client = self.inner.clone();
+        let response = with_timeout(
+            "list_predefined_functions",
+            timeout,
+            client.list_predefined_functions(req),
+        )
+        .await?;
         Ok(response.into_inner())
     }
 
     /// Probe the health of the analytics sidecar.
     pub async fn health_check(&self) -> Result<HealthStatus, AnalyticsError> {
+        let timeout = self.config.health_timeout;
         let mut req = Request::new(Empty {});
-        req.set_timeout(self.config.health_timeout);
-        let response = self.inner.clone().health_check(req).await?;
+        req.set_timeout(timeout);
+        let mut client = self.inner.clone();
+        let response = with_timeout("health_check", timeout, client.health_check(req)).await?;
         Ok(response.into_inner())
+    }
+}
+
+async fn with_timeout<F, T>(
+    operation: &'static str,
+    timeout: Duration,
+    fut: F,
+) -> Result<T, AnalyticsError>
+where
+    F: std::future::Future<Output = Result<T, tonic::Status>>,
+{
+    match tokio::time::timeout(timeout, fut).await {
+        Ok(Ok(value)) => Ok(value),
+        Ok(Err(status)) => {
+            // Treat tonic's deadline-driven cancellation as a Timeout for
+            // classification, since it has the same operational meaning.
+            if matches!(status.code(), Code::DeadlineExceeded | Code::Cancelled) {
+                Err(AnalyticsError::Timeout {
+                    operation,
+                    elapsed: timeout,
+                })
+            } else {
+                Err(AnalyticsError::Rpc(status))
+            }
+        }
+        Err(_) => Err(AnalyticsError::Timeout {
+            operation,
+            elapsed: timeout,
+        }),
     }
 }
 
