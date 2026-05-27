@@ -50,3 +50,8 @@ svcs/seer/venv/
 svcs/seer/analytics_pb2.py
 svcs/seer/analytics_pb2_grpc.py
 svcs/seer/analytics_pb2.pyi
+
+# UI build artifacts (UI is built separately and embedded by build.rs)
+ui/node_modules/
+ui/dist/
+ui/.svelte-kit/
