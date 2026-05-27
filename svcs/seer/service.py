@@ -7,7 +7,7 @@ from typing import AsyncIterator
 import grpc
 
 # Import generated protobuf code
-from analytics_server import analytics_pb2, analytics_pb2_grpc
+from seer import analytics_pb2, analytics_pb2_grpc
 
 
 class AnalyticsServiceImpl(analytics_pb2_grpc.AnalyticsServiceServicer):

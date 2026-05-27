@@ -7,7 +7,7 @@ import signal
 import sys
 from pathlib import Path
 
-from analytics_server.server import AnalyticsServer
+from seer.server import AnalyticsServer
 
 
 def setup_logging(log_level: str) -> None:
@@ -22,7 +22,7 @@ def setup_logging(log_level: str) -> None:
 
 def parse_args() -> argparse.Namespace:
     """Parse command line arguments."""
-    parser = argparse.ArgumentParser(description="Klyster Analytics Server")
+    parser = argparse.ArgumentParser(description="Klyster Seer (analytics sidecar)")
     parser.add_argument(
         "--socket",
         type=str,
@@ -56,7 +56,7 @@ async def main() -> None:
     setup_logging(args.log_level)
 
     logger = logging.getLogger(__name__)
-    logger.info("Starting Klyster Analytics Server")
+    logger.info("Starting Klyster Seer (analytics sidecar)")
 
     # Determine connection type
     if args.socket:
@@ -81,13 +81,13 @@ async def main() -> None:
 
     try:
         await server.start()
-        logger.info("Analytics server started successfully")
+        logger.info("Seer started successfully")
         await server.wait_for_termination()
     except Exception as e:
         logger.error(f"Server error: {e}", exc_info=True)
         sys.exit(1)
     finally:
-        logger.info("Analytics server stopped")
+        logger.info("Seer stopped")
 
 
 if __name__ == "__main__":

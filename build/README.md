@@ -7,10 +7,10 @@ This directory contains everything needed to build and deploy Klyster as a conta
 ### 1. Build the Docker images
 ```bash
 cd build
-./build.sh           # builds both core and analytics
+./build.sh           # builds both core and seer
 # or build individually:
 # ./build.sh core
-# ./build.sh analytics
+# ./build.sh seer
 ```
 
 ### 2. Run standalone (SQLite)
@@ -18,7 +18,7 @@ cd build
 docker run -p 8080:8080 klyster:latest
 ```
 
-### 3. Run with docker-compose (PostgreSQL + Prometheus + Analytics)
+### 3. Run with docker-compose (PostgreSQL + Prometheus + Seer)
 ```bash
 cd build
 docker-compose up -d
@@ -29,9 +29,9 @@ docker-compose up -d
 ```
 build/
 ├── Dockerfile                  # Multi-stage build for Klyster (Rust)
-├── Dockerfile.analytics        # Build for Python analytics sidecar
+├── Dockerfile.seer             # Build for Seer (Python analytics sidecar)
 ├── docker-compose.yml          # Full stack orchestration
-├── build.sh                    # Build script (core | analytics | all)
+├── build.sh                    # Build script (core | seer | all)
 ├── README.md                   # This file
 ├── config/
 │   ├── klyster.toml           # Default config (SQLite)

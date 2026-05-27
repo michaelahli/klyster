@@ -1,4 +1,4 @@
-# Multi-stage build for Klyster Analytics Server (Python sidecar)
+# Multi-stage build for Klyster Seer (Python analytics sidecar)
 FROM python:3.11-slim AS builder
 
 WORKDIR /build
@@ -14,24 +14,24 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 # Install dependencies into an isolated prefix so we can copy them to the runtime stage
-COPY svcs/analytics_server/requirements.txt ./requirements.txt
+COPY svcs/seer/requirements.txt ./requirements.txt
 RUN pip install --no-cache-dir --prefix=/install -r requirements.txt
 
-# Copy proto definition and analytics server source
+# Copy proto definition and seer source
 COPY proto /build/proto
-COPY svcs/analytics_server /build/analytics_server
+COPY svcs/seer /build/seer
 
 # Generate Python gRPC bindings from the proto file (uses base-image python
 # with PYTHONPATH pointing at the prefix-installed grpcio_tools)
 RUN PYTHONPATH=/install/lib/python3.11/site-packages \
     python -m grpc_tools.protoc \
         -I/build/proto \
-        --python_out=/build/analytics_server \
-        --grpc_python_out=/build/analytics_server \
-        --pyi_out=/build/analytics_server \
+        --python_out=/build/seer \
+        --grpc_python_out=/build/seer \
+        --pyi_out=/build/seer \
         /build/proto/analytics.proto \
-    && sed -i 's/^import analytics_pb2 as analytics__pb2$/from analytics_server import analytics_pb2 as analytics__pb2/' \
-        /build/analytics_server/analytics_pb2_grpc.py
+    && sed -i 's/^import analytics_pb2 as analytics__pb2$/from seer import analytics_pb2 as analytics__pb2/' \
+        /build/seer/analytics_pb2_grpc.py
 
 # Runtime stage
 FROM python:3.11-slim
@@ -46,21 +46,21 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 # Create non-root user
-RUN useradd -m -u 1000 analytics && \
+RUN useradd -m -u 1000 seer && \
     mkdir -p /var/run/klyster && \
-    chown -R analytics:analytics /app /var/run/klyster
+    chown -R seer:seer /app /var/run/klyster
 
 # Copy installed dependencies from builder
 COPY --from=builder /install /usr/local
 
 # Copy server sources (with generated proto code)
-COPY --from=builder /build/analytics_server /app/analytics_server
+COPY --from=builder /build/seer /app/seer
 
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     PYTHONPATH=/app
 
-USER analytics
+USER seer
 
 EXPOSE 50051
 
@@ -69,4 +69,4 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
 ch = grpc.insecure_channel('127.0.0.1:50051'); \
 grpc.channel_ready_future(ch).result(timeout=3)" || exit 1
 
-CMD ["python", "-m", "analytics_server", "--host", "0.0.0.0", "--port", "50051"]
+CMD ["python", "-m", "seer", "--host", "0.0.0.0", "--port", "50051"]

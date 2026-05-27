@@ -1,4 +1,4 @@
-# Makefile for Analytics Server
+# Makefile for Seer (Klyster analytics sidecar)
 
 PYTHON := python3
 VENV := venv
@@ -7,13 +7,13 @@ VENV_BIN := $(VENV)/bin
 .PHONY: help codegen install run test clean venv
 
 help:
-	@echo "Analytics Server - Makefile"
+	@echo "Seer - Makefile"
 	@echo ""
 	@echo "Available targets:"
 	@echo "  venv     - Create Python virtual environment"
 	@echo "  codegen  - Generate Python code from protobuf"
 	@echo "  install  - Install Python dependencies"
-	@echo "  run      - Run the analytics server"
+	@echo "  run      - Run Seer"
 	@echo "  test     - Run tests"
 	@echo "  clean    - Clean generated files"
 
@@ -31,7 +31,7 @@ codegen:
 		--grpc_python_out=. \
 		--pyi_out=. \
 		../../proto/analytics.proto
-	@sed -i.bak 's/^import analytics_pb2 as analytics__pb2$$/from analytics_server import analytics_pb2 as analytics__pb2/' analytics_pb2_grpc.py && rm -f analytics_pb2_grpc.py.bak
+	@sed -i.bak 's/^import analytics_pb2 as analytics__pb2$$/from seer import analytics_pb2 as analytics__pb2/' analytics_pb2_grpc.py && rm -f analytics_pb2_grpc.py.bak
 	@echo "Protobuf code generated successfully"
 
 install: venv
@@ -40,8 +40,8 @@ install: venv
 	@echo "Dependencies installed"
 
 run:
-	@echo "Starting analytics server..."
-	cd ../.. && PYTHONPATH=svcs $(PYTHON) -m analytics_server
+	@echo "Starting Seer..."
+	cd ../.. && PYTHONPATH=svcs $(PYTHON) -m seer
 
 test:
 	@echo "Running tests..."
@@ -53,3 +53,4 @@ clean:
 	rm -rf __pycache__ .pytest_cache $(VENV)
 	find . -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
 	@echo "Clean complete"
+

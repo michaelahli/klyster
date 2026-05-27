@@ -18,7 +18,7 @@ services:
       KLYSTER_WEB__PORT: 8080
       # Analytics sidecar
       KLYSTER_ANALYTICS__ENABLED: "true"
-      KLYSTER_ANALYTICS__GRPC_ENDPOINT: http://analytics:50051
+      KLYSTER_ANALYTICS__GRPC_ENDPOINT: http://seer:50051
       # Logging
       KLYSTER_LOGGING__LEVEL: info
       KLYSTER_LOGGING__FORMAT: json
@@ -29,7 +29,7 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-      analytics:
+      seer:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/healthz"]
@@ -41,13 +41,13 @@ services:
     networks:
       - klyster-network
 
-  # Python analytics sidecar (gRPC server)
-  analytics:
-    image: klyster-analytics:latest
-    container_name: klyster-analytics
+  # Seer (Python analytics sidecar, gRPC server)
+  seer:
+    image: klyster-seer:latest
+    container_name: klyster-seer
     build:
       context: ..
-      dockerfile: build/Dockerfile.analytics
+      dockerfile: build/Dockerfile.seer
     environment:
       PYTHONUNBUFFERED: "1"
     ports:

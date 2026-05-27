@@ -6,7 +6,7 @@ from typing import Optional
 
 import grpc
 
-from analytics_server.service import AnalyticsServiceImpl
+from seer.service import AnalyticsServiceImpl
 
 
 class AnalyticsServer:
@@ -27,7 +27,7 @@ class AnalyticsServer:
         self.server = grpc.aio.server()
 
         # Add service implementation
-        from analytics_server.analytics_pb2_grpc import add_AnalyticsServiceServicer_to_server
+        from seer.analytics_pb2_grpc import add_AnalyticsServiceServicer_to_server
 
         add_AnalyticsServiceServicer_to_server(AnalyticsServiceImpl(), self.server)
 
