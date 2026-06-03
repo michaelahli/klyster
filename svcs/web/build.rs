@@ -33,8 +33,7 @@ fn main() {
         .arg("--version")
         .current_dir(&manifest_dir)
         .output()
-        .map(|o| o.status.success())
-        .unwrap_or(false);
+        .is_ok_and(|o| o.status.success());
     if !npm_ok {
         ensure_placeholder(&dist_dir, &styles_css, "npm not found");
         return;
@@ -43,7 +42,7 @@ fn main() {
     if !manifest_dir.join("node_modules").exists() {
         println!("cargo:warning=installing deps (npm install)");
         let status = Command::new("npm").arg("install").current_dir(&manifest_dir).status();
-        if !status.map(|s| s.success()).unwrap_or(false) {
+        if !status.is_ok_and(|s| s.success()) {
             ensure_placeholder(&dist_dir, &styles_css, "npm install failed");
             return;
         }
@@ -51,7 +50,7 @@ fn main() {
 
     println!("cargo:warning=building CSS (npm run build)");
     let status = Command::new("npm").arg("run").arg("build").current_dir(&manifest_dir).status();
-    if !status.map(|s| s.success()).unwrap_or(false) {
+    if !status.is_ok_and(|s| s.success()) {
         ensure_placeholder(&dist_dir, &styles_css, "npm run build failed");
     }
 }
