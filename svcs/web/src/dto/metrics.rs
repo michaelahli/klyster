@@ -5,10 +5,12 @@ use serde::{Deserialize, Serialize};
 /// Query parameters for metric data.
 #[derive(Debug, Clone, Deserialize)]
 pub struct MetricQueryParams {
-    /// Start time (ISO8601 timestamp).
-    pub start: String,
+    /// Start time (ISO8601 timestamp) - optional if hours is provided.
+    pub start: Option<String>,
     /// End time (ISO8601 timestamp, default: now).
     pub end: Option<String>,
+    /// Hours back from now (alternative to start/end).
+    pub hours: Option<i64>,
     /// Source ID filter (optional).
     pub source_id: Option<i64>,
     /// Aggregation interval: 1m, 5m, 1h, 1d (optional).

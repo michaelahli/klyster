@@ -67,18 +67,25 @@ pub async fn query_metrics(
 ) -> ApiResult<Json<MetricQueryResponse>> {
     debug!(name, ?params, "Querying metrics");
 
-    // Parse start time
-    let start = DateTime::parse_from_rfc3339(&params.start)
-        .map_err(|e| ApiError::ValidationError(format!("Invalid start time: {e}")))?
-        .with_timezone(&Utc);
-
-    // Parse end time (default to now)
+    // Calculate start/end times from params
     let end = if let Some(end_str) = &params.end {
         DateTime::parse_from_rfc3339(end_str)
-            .map_err(|e| ApiError::ValidationError(format!("Invalid end time: {e}")))?
+            .map_err(|e| ApiError::ValidationError(format!("Invalid end time: {e}")))?  
             .with_timezone(&Utc)
     } else {
         Utc::now()
+    };
+
+    let start = if let Some(start_str) = &params.start {
+        DateTime::parse_from_rfc3339(start_str)
+            .map_err(|e| ApiError::ValidationError(format!("Invalid start time: {e}")))?
+            .with_timezone(&Utc)
+    } else if let Some(hours) = params.hours {
+        end - chrono::Duration::hours(hours)
+    } else {
+        return Err(ApiError::ValidationError(
+            "Either 'start' or 'hours' parameter is required".to_string(),
+        ));
     };
 
     // Validate time range
