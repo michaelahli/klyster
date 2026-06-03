@@ -4,10 +4,14 @@ FROM rust:1.90-slim as builder
 WORKDIR /build
 
 # Install build dependencies (protoc is required by tonic-build for the analytics crate)
+# Node.js is required for building Tailwind CSS
 RUN apt-get update && apt-get install -y \
     pkg-config \
     libssl-dev \
     protobuf-compiler \
+    curl \
+    && curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
+    && apt-get install -y nodejs \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy workspace files

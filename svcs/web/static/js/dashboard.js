@@ -21,7 +21,8 @@ function renderDashboard(container) {
 async function loadMetrics() {
   try {
     const response = await fetch('/api/v1/metrics/latest');
-    const metrics = await response.json();
+    const data = await response.json();
+    const metrics = Array.isArray(data) ? data : (data.names || data.data || []);
     renderMetricCards(metrics);
     loadCpuChart();
   } catch (error) {
