@@ -16,9 +16,18 @@ fn main() {
     let styles_css = dist_dir.join("styles.css");
 
     println!("cargo:rerun-if-env-changed=KLYSTER_SKIP_UI_BUILD");
-    println!("cargo:rerun-if-changed={}", manifest_dir.join("package.json").display());
-    println!("cargo:rerun-if-changed={}", static_dir.join("css").display());
-    println!("cargo:rerun-if-changed={}", manifest_dir.join("tailwind.config.js").display());
+    println!(
+        "cargo:rerun-if-changed={}",
+        manifest_dir.join("package.json").display()
+    );
+    println!(
+        "cargo:rerun-if-changed={}",
+        static_dir.join("css").display()
+    );
+    println!(
+        "cargo:rerun-if-changed={}",
+        manifest_dir.join("tailwind.config.js").display()
+    );
 
     if std::env::var_os("KLYSTER_SKIP_UI_BUILD").is_some() {
         ensure_placeholder(&dist_dir, &styles_css, "KLYSTER_SKIP_UI_BUILD set");
@@ -41,7 +50,10 @@ fn main() {
 
     if !manifest_dir.join("node_modules").exists() {
         println!("cargo:warning=installing deps (npm install)");
-        let status = Command::new("npm").arg("install").current_dir(&manifest_dir).status();
+        let status = Command::new("npm")
+            .arg("install")
+            .current_dir(&manifest_dir)
+            .status();
         if !status.is_ok_and(|s| s.success()) {
             ensure_placeholder(&dist_dir, &styles_css, "npm install failed");
             return;
@@ -49,7 +61,11 @@ fn main() {
     }
 
     println!("cargo:warning=building CSS (npm run build)");
-    let status = Command::new("npm").arg("run").arg("build").current_dir(&manifest_dir).status();
+    let status = Command::new("npm")
+        .arg("run")
+        .arg("build")
+        .current_dir(&manifest_dir)
+        .status();
     if !status.is_ok_and(|s| s.success()) {
         ensure_placeholder(&dist_dir, &styles_css, "npm run build failed");
     }

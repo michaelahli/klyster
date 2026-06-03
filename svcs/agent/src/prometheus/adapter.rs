@@ -37,7 +37,7 @@ pub struct PrometheusAdapter {
 
 impl PrometheusAdapter {
     /// Creates a new Prometheus adapter.
-    #[must_use] 
+    #[must_use]
     pub fn new(client: PrometheusClient, source_id: i64) -> Self {
         Self { client, source_id }
     }
@@ -345,13 +345,13 @@ impl PrometheusAdapter {
     }
 
     /// Gets the Prometheus client.
-    #[must_use] 
+    #[must_use]
     pub fn client(&self) -> &PrometheusClient {
         &self.client
     }
 
     /// Gets the source ID.
-    #[must_use] 
+    #[must_use]
     pub fn source_id(&self) -> i64 {
         self.source_id
     }

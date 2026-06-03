@@ -20,7 +20,11 @@ pub async fn request_logging_middleware(request: Request, next: Next) -> Respons
     let request_id = request
         .headers()
         .get("x-request-id")
-        .and_then(|v| v.to_str().ok()).map_or_else(|| uuid::Uuid::new_v4().to_string(), std::string::ToString::to_string);
+        .and_then(|v| v.to_str().ok())
+        .map_or_else(
+            || uuid::Uuid::new_v4().to_string(),
+            std::string::ToString::to_string,
+        );
 
     // Process request
     let response = next.run(request).await;

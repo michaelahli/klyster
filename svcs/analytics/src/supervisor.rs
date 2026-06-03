@@ -123,7 +123,7 @@ pub struct Supervisor {
 
 impl Supervisor {
     /// Build a supervisor with the given configuration.
-    #[must_use] 
+    #[must_use]
     pub fn new(config: SupervisorConfig) -> Self {
         Self {
             config,
@@ -139,7 +139,7 @@ impl Supervisor {
     }
 
     /// Start the supervisor on a background task.
-    #[must_use] 
+    #[must_use]
     pub fn start(self) -> SupervisorHandle {
         let (tx, rx) = oneshot::channel();
         let join = tokio::spawn(self.run(rx));

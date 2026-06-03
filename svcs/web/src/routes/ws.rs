@@ -22,13 +22,13 @@ pub enum WsMessage {
     #[serde(rename = "subscribe")]
     Subscribe {
         /// List of metric names to subscribe to.
-        metrics: Vec<String>
+        metrics: Vec<String>,
     },
     /// Unsubscribe from metrics.
     #[serde(rename = "unsubscribe")]
     Unsubscribe {
         /// List of metric names to unsubscribe from.
-        metrics: Vec<String>
+        metrics: Vec<String>,
     },
     /// Ping message.
     #[serde(rename = "ping")]

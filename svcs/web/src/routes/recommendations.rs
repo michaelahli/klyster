@@ -91,9 +91,7 @@ pub async fn approve_recommendation(
         .await?;
 
     if rows == 0 {
-        return Err(ApiError::NotFound(format!(
-            "Recommendation {id} not found"
-        )));
+        return Err(ApiError::NotFound(format!("Recommendation {id} not found")));
     }
 
     // Fetch the updated recommendation
@@ -131,9 +129,7 @@ pub async fn dismiss_recommendation(
         .await?;
 
     if rows == 0 {
-        return Err(ApiError::NotFound(format!(
-            "Recommendation {id} not found"
-        )));
+        return Err(ApiError::NotFound(format!("Recommendation {id} not found")));
     }
 
     // Fetch the updated recommendation

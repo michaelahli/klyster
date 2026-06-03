@@ -49,7 +49,7 @@ pub struct MetricCollector {
 
 impl MetricCollector {
     /// Creates a new metric collector.
-    #[must_use] 
+    #[must_use]
     pub fn new(adapter: PrometheusAdapter, pool: DatabasePool, config: CollectorConfig) -> Self {
         Self {
             adapter: Arc::new(adapter),

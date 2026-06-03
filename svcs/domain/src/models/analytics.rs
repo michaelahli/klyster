@@ -17,7 +17,7 @@ pub enum FunctionType {
 
 impl FunctionType {
     /// Convert to database string representation.
-    #[must_use] 
+    #[must_use]
     pub fn as_str(&self) -> &'static str {
         match self {
             FunctionType::Predefined => "predefined",
@@ -66,19 +66,19 @@ pub struct AnalyticsFunction {
 
 impl AnalyticsFunction {
     /// Get the function type as enum.
-    #[must_use] 
+    #[must_use]
     pub fn get_type(&self) -> Option<FunctionType> {
         self.function_type.parse().ok()
     }
 
     /// Check if this is a predefined function.
-    #[must_use] 
+    #[must_use]
     pub fn is_predefined(&self) -> bool {
         self.get_type() == Some(FunctionType::Predefined)
     }
 
     /// Check if this is a custom function.
-    #[must_use] 
+    #[must_use]
     pub fn is_custom(&self) -> bool {
         self.get_type() == Some(FunctionType::Custom)
     }

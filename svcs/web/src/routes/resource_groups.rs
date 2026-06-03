@@ -193,17 +193,13 @@ pub async fn delete_group(
 
     // Check if group exists
     if repo.get_group(id).await?.is_none() {
-        return Err(ApiError::NotFound(format!(
-            "Resource group {id} not found"
-        )));
+        return Err(ApiError::NotFound(format!("Resource group {id} not found")));
     }
 
     let rows = repo.delete_group(id).await?;
 
     if rows == 0 {
-        return Err(ApiError::NotFound(format!(
-            "Resource group {id} not found"
-        )));
+        return Err(ApiError::NotFound(format!("Resource group {id} not found")));
     }
 
     Ok(StatusCode::NO_CONTENT)
@@ -254,9 +250,7 @@ pub async fn set_scaling_target(
 
     // Check if group exists
     if repo.get_group(id).await?.is_none() {
-        return Err(ApiError::NotFound(format!(
-            "Resource group {id} not found"
-        )));
+        return Err(ApiError::NotFound(format!("Resource group {id} not found")));
     }
 
     let target = ScalingTarget {
@@ -298,9 +292,7 @@ pub async fn list_resources(
 
     // Check if group exists
     if repo.get_group(id).await?.is_none() {
-        return Err(ApiError::NotFound(format!(
-            "Resource group {id} not found"
-        )));
+        return Err(ApiError::NotFound(format!("Resource group {id} not found")));
     }
 
     let resources = repo.list_by_group(id).await?;

@@ -46,7 +46,7 @@ pub struct SourceResponse {
 
 impl SourceResponse {
     /// Convert from domain model.
-    #[must_use] 
+    #[must_use]
     pub fn from_model(source: domain::models::MetricSource) -> Self {
         Self {
             id: source.id,

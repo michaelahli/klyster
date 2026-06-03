@@ -17,7 +17,7 @@ pub enum MetricSourceType {
 
 impl MetricSourceType {
     /// Convert to database string representation.
-    #[must_use] 
+    #[must_use]
     pub fn as_str(&self) -> &'static str {
         match self {
             MetricSourceType::Prometheus => "prometheus",
@@ -58,7 +58,7 @@ pub struct MetricSource {
 
 impl MetricSource {
     /// Get the source type as enum.
-    #[must_use] 
+    #[must_use]
     pub fn get_type(&self) -> Option<MetricSourceType> {
         self.source_type.parse().ok()
     }

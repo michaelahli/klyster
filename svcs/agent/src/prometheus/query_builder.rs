@@ -59,14 +59,14 @@ impl QueryBuilder {
     }
 
     /// Adds multiple label selectors.
-    #[must_use] 
+    #[must_use]
     pub fn with_labels(mut self, labels: HashMap<String, String>) -> Self {
         self.labels.extend(labels);
         self
     }
 
     /// Applies an aggregation function.
-    #[must_use] 
+    #[must_use]
     pub fn aggregate(mut self, agg: Aggregation) -> Self {
         self.aggregation = Some(agg);
         self
@@ -87,7 +87,7 @@ impl QueryBuilder {
     }
 
     /// Builds the `PromQL` query string.
-    #[must_use] 
+    #[must_use]
     pub fn build(self) -> String {
         let mut query = self.metric.clone();
 
@@ -125,7 +125,7 @@ pub struct CommonQueries;
 
 impl CommonQueries {
     /// CPU usage percentage (0-100) per instance.
-    #[must_use] 
+    #[must_use]
     pub fn cpu_usage() -> String {
         QueryBuilder::new("node_cpu_seconds_total")
             .with_label("mode", "idle")
@@ -134,7 +134,7 @@ impl CommonQueries {
     }
 
     /// CPU usage percentage aggregated across all instances.
-    #[must_use] 
+    #[must_use]
     pub fn cpu_usage_total() -> String {
         QueryBuilder::new("node_cpu_seconds_total")
             .with_label("mode", "idle")
@@ -144,13 +144,13 @@ impl CommonQueries {
     }
 
     /// Memory usage percentage per instance.
-    #[must_use] 
+    #[must_use]
     pub fn memory_usage() -> String {
         "(1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100".to_string()
     }
 
     /// Memory usage in bytes per instance.
-    #[must_use] 
+    #[must_use]
     pub fn memory_usage_bytes() -> String {
         QueryBuilder::new("node_memory_MemTotal_bytes")
             .build()
@@ -161,13 +161,13 @@ impl CommonQueries {
     }
 
     /// Disk usage percentage per instance and device.
-    #[must_use] 
+    #[must_use]
     pub fn disk_usage() -> String {
         "(1 - (node_filesystem_avail_bytes / node_filesystem_size_bytes)) * 100".to_string()
     }
 
     /// Disk I/O read rate in bytes per second.
-    #[must_use] 
+    #[must_use]
     pub fn disk_read_rate() -> String {
         QueryBuilder::new("node_disk_read_bytes_total")
             .rate("5m")
@@ -175,7 +175,7 @@ impl CommonQueries {
     }
 
     /// Disk I/O write rate in bytes per second.
-    #[must_use] 
+    #[must_use]
     pub fn disk_write_rate() -> String {
         QueryBuilder::new("node_disk_written_bytes_total")
             .rate("5m")
@@ -183,7 +183,7 @@ impl CommonQueries {
     }
 
     /// Network receive rate in bytes per second.
-    #[must_use] 
+    #[must_use]
     pub fn network_receive_rate() -> String {
         QueryBuilder::new("node_network_receive_bytes_total")
             .rate("5m")
@@ -191,7 +191,7 @@ impl CommonQueries {
     }
 
     /// Network transmit rate in bytes per second.
-    #[must_use] 
+    #[must_use]
     pub fn network_transmit_rate() -> String {
         QueryBuilder::new("node_network_transmit_bytes_total")
             .rate("5m")
@@ -199,7 +199,7 @@ impl CommonQueries {
     }
 
     /// Kubernetes pod CPU usage.
-    #[must_use] 
+    #[must_use]
     pub fn k8s_pod_cpu_usage() -> String {
         QueryBuilder::new("container_cpu_usage_seconds_total")
             .rate("5m")
@@ -207,13 +207,13 @@ impl CommonQueries {
     }
 
     /// Kubernetes pod memory usage in bytes.
-    #[must_use] 
+    #[must_use]
     pub fn k8s_pod_memory_usage() -> String {
         QueryBuilder::new("container_memory_working_set_bytes").build()
     }
 
     /// Kubernetes pod network receive rate.
-    #[must_use] 
+    #[must_use]
     pub fn k8s_pod_network_receive_rate() -> String {
         QueryBuilder::new("container_network_receive_bytes_total")
             .rate("5m")
@@ -221,7 +221,7 @@ impl CommonQueries {
     }
 
     /// Kubernetes pod network transmit rate.
-    #[must_use] 
+    #[must_use]
     pub fn k8s_pod_network_transmit_rate() -> String {
         QueryBuilder::new("container_network_transmit_bytes_total")
             .rate("5m")

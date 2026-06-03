@@ -23,7 +23,7 @@ pub enum ResourceKind {
 
 impl ResourceKind {
     /// Convert to database string representation.
-    #[must_use] 
+    #[must_use]
     pub fn as_str(&self) -> &'static str {
         match self {
             ResourceKind::Pod => "pod",
@@ -92,7 +92,7 @@ pub struct Resource {
 
 impl Resource {
     /// Get the resource kind as enum.
-    #[must_use] 
+    #[must_use]
     pub fn get_kind(&self) -> Option<ResourceKind> {
         self.kind.parse().ok()
     }

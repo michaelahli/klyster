@@ -27,7 +27,7 @@ pub struct ForecastResponse {
 
 impl ForecastResponse {
     /// Convert from domain model.
-    #[must_use] 
+    #[must_use]
     pub fn from_model(forecast: domain::models::Forecast) -> Self {
         let parameters: Option<serde_json::Value> = forecast
             .parameters
@@ -139,7 +139,7 @@ pub struct RecommendationResponse {
 
 impl RecommendationResponse {
     /// Convert from domain model.
-    #[must_use] 
+    #[must_use]
     pub fn from_model(recommendation: domain::models::Recommendation) -> Self {
         Self {
             id: recommendation.id,

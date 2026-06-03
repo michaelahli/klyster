@@ -62,7 +62,7 @@ pub struct FunctionResponse {
 
 impl FunctionResponse {
     /// Convert from domain model.
-    #[must_use] 
+    #[must_use]
     pub fn from_model(function: domain::models::AnalyticsFunction) -> Self {
         let parameters_schema: Option<serde_json::Value> = function
             .parameters_schema

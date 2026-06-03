@@ -12,7 +12,7 @@ pub struct ResourceRepository<'a> {
 
 impl<'a> ResourceRepository<'a> {
     /// Create a new resource repository.
-    #[must_use] 
+    #[must_use]
     pub fn new(pool: &'a DatabasePool) -> Self {
         Self { pool }
     }

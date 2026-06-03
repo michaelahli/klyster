@@ -34,7 +34,7 @@ struct TokenBucket {
 
 impl RateLimiter {
     /// Create a new rate limiter.
-    #[must_use] 
+    #[must_use]
     pub fn new(requests_per_minute: u32) -> Self {
         Self {
             state: Arc::new(Mutex::new(RateLimiterState {
@@ -101,7 +101,8 @@ pub async fn rate_limit_middleware(
             // In production, you'd want to check X-Forwarded-For header
             let ip = request
                 .extensions()
-                .get::<std::net::SocketAddr>().map_or_else(|| IpAddr::from([127, 0, 0, 1]), std::net::SocketAddr::ip);
+                .get::<std::net::SocketAddr>()
+                .map_or_else(|| IpAddr::from([127, 0, 0, 1]), std::net::SocketAddr::ip);
 
             match limiter.check_rate_limit(ip).await {
                 Ok(()) => next.run(request).await,

@@ -12,7 +12,7 @@ pub struct AnalyticsFunctionRepository<'a> {
 
 impl<'a> AnalyticsFunctionRepository<'a> {
     /// Create a new analytics function repository.
-    #[must_use] 
+    #[must_use]
     pub fn new(pool: &'a DatabasePool) -> Self {
         Self { pool }
     }

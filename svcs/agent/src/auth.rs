@@ -1,17 +1,9 @@
 //! Agent authentication middleware.
 
-use axum::{
-    extract::Request,
-    http::StatusCode,
-    middleware::Next,
-    response::Response,
-};
+use axum::{extract::Request, http::StatusCode, middleware::Next, response::Response};
 
 /// Validate API key from X-API-Key header.
-pub async fn validate_api_key(
-    request: Request,
-    next: Next,
-) -> Result<Response, StatusCode> {
+pub async fn validate_api_key(request: Request, next: Next) -> Result<Response, StatusCode> {
     let api_key = request
         .headers()
         .get("X-API-Key")

@@ -20,7 +20,7 @@ struct AppStateInner {
 
 impl AppState {
     /// Create a new `AppState` with the given database pool and configuration.
-    #[must_use] 
+    #[must_use]
     pub fn new(db: DatabasePool, config: Arc<Config>) -> Self {
         Self {
             inner: Arc::new(AppStateInner { db, config }),
@@ -28,13 +28,13 @@ impl AppState {
     }
 
     /// Access the database pool.
-    #[must_use] 
+    #[must_use]
     pub fn db(&self) -> &DatabasePool {
         &self.inner.db
     }
 
     /// Access the application configuration.
-    #[must_use] 
+    #[must_use]
     pub fn config(&self) -> &Config {
         &self.inner.config
     }

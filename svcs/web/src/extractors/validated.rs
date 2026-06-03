@@ -62,7 +62,9 @@ impl IntoResponse for ValidationError {
                     .map(|(field, errors)| {
                         let messages: Vec<String> = errors
                             .iter()
-                            .filter_map(|e| e.message.as_ref().map(std::string::ToString::to_string))
+                            .filter_map(|e| {
+                                e.message.as_ref().map(std::string::ToString::to_string)
+                            })
                             .collect();
                         serde_json::json!({
                             "field": field,

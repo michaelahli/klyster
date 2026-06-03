@@ -96,7 +96,7 @@ impl DatabasePool {
     }
 
     /// Get the database type as a string.
-    #[must_use] 
+    #[must_use]
     pub fn db_type(&self) -> &str {
         match self {
             DatabasePool::Sqlite(_) => "sqlite",

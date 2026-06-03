@@ -35,7 +35,7 @@ pub enum SerializationError {
 /// Points with non-finite values are skipped; the returned list preserves
 /// input order otherwise.
 #[allow(clippy::implicit_hasher)] // callers use std::collections::HashMap; generics hurt inference at None call sites.
-#[must_use] 
+#[must_use]
 pub fn metrics_to_data_points(
     metrics: &[Metric],
     labels_by_metric_id: Option<&HashMap<i64, Vec<MetricLabel>>>,

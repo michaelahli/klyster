@@ -12,7 +12,7 @@ pub struct MetricSourceRepository<'a> {
 
 impl<'a> MetricSourceRepository<'a> {
     /// Create a new metric source repository.
-    #[must_use] 
+    #[must_use]
     pub fn new(pool: &'a DatabasePool) -> Self {
         Self { pool }
     }
@@ -181,9 +181,9 @@ impl<'a> MetricSourceRepository<'a> {
         };
 
         if rows_affected == 0 {
-              return Err(crate::error::DbError::NotFound(format!(
-                  "Metric source {id} not found"
-              )));
+            return Err(crate::error::DbError::NotFound(format!(
+                "Metric source {id} not found"
+            )));
         }
 
         info!(id, "Metric source updated");

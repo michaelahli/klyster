@@ -49,7 +49,7 @@ pub enum ApiError {
 
 impl ApiError {
     /// Get the HTTP status code for this error.
-    #[must_use] 
+    #[must_use]
     pub fn status_code(&self) -> StatusCode {
         match self {
             ApiError::NotFound(_) => StatusCode::NOT_FOUND,
@@ -60,7 +60,7 @@ impl ApiError {
     }
 
     /// Get the error code string.
-    #[must_use] 
+    #[must_use]
     pub fn error_code(&self) -> &str {
         match self {
             ApiError::NotFound(_) => "not_found",

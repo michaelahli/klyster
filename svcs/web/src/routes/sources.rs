@@ -166,9 +166,7 @@ pub async fn delete_source(
     if deleted {
         Ok(StatusCode::NO_CONTENT)
     } else {
-        Err(ApiError::NotFound(format!(
-            "Source with id {id} not found"
-        )))
+        Err(ApiError::NotFound(format!("Source with id {id} not found")))
     }
 }
 

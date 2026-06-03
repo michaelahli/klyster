@@ -11,14 +11,14 @@ pub struct ShutdownSignal {
 
 impl ShutdownSignal {
     /// Create a new shutdown signal broadcaster.
-    #[must_use] 
+    #[must_use]
     pub fn new() -> Self {
         let (sender, _) = broadcast::channel(1);
         Self { sender }
     }
 
     /// Subscribe to shutdown signals.
-    #[must_use] 
+    #[must_use]
     pub fn subscribe(&self) -> broadcast::Receiver<()> {
         self.sender.subscribe()
     }
@@ -30,7 +30,7 @@ impl ShutdownSignal {
     }
 
     /// Get the number of active subscribers.
-    #[must_use] 
+    #[must_use]
     pub fn receiver_count(&self) -> usize {
         self.sender.receiver_count()
     }
@@ -84,7 +84,7 @@ pub struct ShutdownCoordinator {
 
 impl ShutdownCoordinator {
     /// Create a new shutdown coordinator with specified timeout.
-    #[must_use] 
+    #[must_use]
     pub fn new(timeout_secs: u64) -> Self {
         Self {
             signal: ShutdownSignal::new(),
@@ -93,7 +93,7 @@ impl ShutdownCoordinator {
     }
 
     /// Get the shutdown signal broadcaster.
-    #[must_use] 
+    #[must_use]
     pub fn signal(&self) -> ShutdownSignal {
         self.signal.clone()
     }

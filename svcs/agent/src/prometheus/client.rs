@@ -236,7 +236,7 @@ impl PrometheusClient {
     }
 
     /// Gets the Prometheus server configuration.
-    #[must_use] 
+    #[must_use]
     pub fn config(&self) -> &PrometheusConfig {
         &self.config
     }

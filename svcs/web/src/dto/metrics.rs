@@ -34,7 +34,7 @@ pub struct MetricDataPoint {
 
 impl MetricDataPoint {
     /// Convert from domain model.
-    #[must_use] 
+    #[must_use]
     pub fn from_model(metric: domain::models::Metric) -> Self {
         Self {
             id: metric.id,

@@ -58,7 +58,7 @@ impl Target {
     }
 
     /// Checks if the target is healthy.
-    #[must_use] 
+    #[must_use]
     pub fn is_healthy(&self) -> bool {
         self.health == TargetHealth::Up
     }
@@ -72,7 +72,7 @@ pub struct ServiceDiscovery {
 
 impl ServiceDiscovery {
     /// Creates a new service discovery client.
-    #[must_use] 
+    #[must_use]
     pub fn new(client: PrometheusClient, config: DiscoveryConfig) -> Self {
         Self { client, config }
     }
@@ -177,7 +177,7 @@ impl ServiceDiscovery {
     }
 
     /// Gets the discovery configuration.
-    #[must_use] 
+    #[must_use]
     pub fn config(&self) -> &DiscoveryConfig {
         &self.config
     }

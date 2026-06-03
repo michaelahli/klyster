@@ -23,13 +23,13 @@ pub enum HealthStatus {
 
 impl HealthStatus {
     /// Checks if the status is healthy.
-    #[must_use] 
+    #[must_use]
     pub fn is_healthy(&self) -> bool {
         matches!(self, HealthStatus::Healthy)
     }
 
     /// Checks if the status is degraded or down.
-    #[must_use] 
+    #[must_use]
     pub fn is_unhealthy(&self) -> bool {
         matches!(self, HealthStatus::Degraded | HealthStatus::Down)
     }
@@ -78,7 +78,7 @@ impl HealthMonitor {
     /// * `client` - Prometheus client to monitor
     /// * `check_interval` - Interval between health checks
     /// * `failure_threshold` - Number of consecutive failures before marking as down
-    #[must_use] 
+    #[must_use]
     pub fn new(client: PrometheusClient, check_interval: Duration, failure_threshold: u32) -> Self {
         Self {
             client: Arc::new(client),

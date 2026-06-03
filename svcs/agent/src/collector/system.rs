@@ -20,7 +20,7 @@ impl Default for SystemCollector {
 
 impl SystemCollector {
     /// Create a new system metrics collector.
-    #[must_use] 
+    #[must_use]
     pub fn new() -> Self {
         let hostname = hostname::get()
             .ok()
