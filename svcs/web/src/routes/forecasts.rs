@@ -269,7 +269,7 @@ mod tests {
         let response = result.unwrap();
         assert_eq!(response.forecast.metric_name, "memory_usage");
         assert_eq!(response.points.len(), 2);
-        assert_eq!(response.points[0].predicted_value, 0.6);
+        assert!((response.points[0].predicted_value - 0.6).abs() < f64::EPSILON);
     }
 
     #[tokio::test]
@@ -306,7 +306,7 @@ mod tests {
 
         // Empty metric name
         let req = TriggerForecastRequest {
-            metric_name: "".to_string(),
+            metric_name: String::new(),
             model_name: None,
             horizon_hours: None,
         };

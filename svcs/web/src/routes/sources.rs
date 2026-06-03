@@ -261,7 +261,7 @@ mod tests {
         let state = test_state().await;
 
         let req = CreateSourceRequest {
-            name: "".to_string(),
+            name: String::new(),
             source_type: "prometheus".to_string(),
             config: serde_json::json!({}),
         };
@@ -281,7 +281,7 @@ mod tests {
             config: serde_json::json!({}),
         };
 
-        create_source(State(state.clone()), Json(req.clone()))
+        let _result = create_source(State(state.clone()), Json(req.clone()))
             .await
             .unwrap();
 
@@ -305,10 +305,10 @@ mod tests {
             config: serde_json::json!({}),
         };
 
-        create_source(State(state.clone()), Json(req1))
+        let _result1 = create_source(State(state.clone()), Json(req1))
             .await
             .unwrap();
-        create_source(State(state.clone()), Json(req2))
+        let _result2 = create_source(State(state.clone()), Json(req2))
             .await
             .unwrap();
 

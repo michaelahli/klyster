@@ -134,7 +134,7 @@ mod tests {
     #[tokio::test]
     async fn test_rate_limiter_allows_requests_within_limit() {
         let limiter = RateLimiter::new(10); // 10 requests per minute
-        let ip = IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1));
+        let ip = IpAddr::V4(Ipv4Addr::LOCALHOST);
 
         // First 10 requests should succeed
         for _ in 0..10 {
@@ -145,7 +145,7 @@ mod tests {
     #[tokio::test]
     async fn test_rate_limiter_blocks_excess_requests() {
         let limiter = RateLimiter::new(5); // 5 requests per minute
-        let ip = IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1));
+        let ip = IpAddr::V4(Ipv4Addr::LOCALHOST);
 
         // First 5 requests should succeed
         for _ in 0..5 {
@@ -159,7 +159,7 @@ mod tests {
     #[tokio::test]
     async fn test_rate_limiter_different_ips() {
         let limiter = RateLimiter::new(5);
-        let ip1 = IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1));
+        let ip1 = IpAddr::V4(Ipv4Addr::LOCALHOST);
         let ip2 = IpAddr::V4(Ipv4Addr::new(127, 0, 0, 2));
 
         // Each IP should have its own bucket
@@ -176,7 +176,7 @@ mod tests {
     #[tokio::test]
     async fn test_rate_limiter_token_refill() {
         let limiter = RateLimiter::new(60); // 60 requests per minute = 1 per second
-        let ip = IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1));
+        let ip = IpAddr::V4(Ipv4Addr::LOCALHOST);
 
         // Use up all tokens
         for _ in 0..60 {

@@ -393,7 +393,7 @@ mod tests {
 
         // Empty name
         let req = CreateResourceGroupRequest {
-            name: "".to_string(),
+            name: String::new(),
             description: None,
             provider_type: "kubernetes".to_string(),
             provider_config: serde_json::json!({}),
@@ -425,7 +425,7 @@ mod tests {
             provider_type: "kubernetes".to_string(),
             provider_config: serde_json::json!({}),
         };
-        create_group(State(state.clone()), Json(req)).await.unwrap();
+        let _result = create_group(State(state.clone()), Json(req)).await.unwrap();
 
         let result = list_groups(State(state.clone())).await;
         assert!(result.is_ok());

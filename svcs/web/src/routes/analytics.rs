@@ -339,7 +339,7 @@ mod tests {
 
         let response = result.unwrap();
         // Should have predefined functions from migrations
-        assert!(response.total >= 0);
+        assert!(!response.functions.is_empty() || response.total == 0);
     }
 
     #[tokio::test]
@@ -370,7 +370,7 @@ mod tests {
 
         // Empty name
         let req = CreateFunctionRequest {
-            name: "".to_string(),
+            name: String::new(),
             description: "Test".to_string(),
             language: "python".to_string(),
             source_code: "def test(): pass".to_string(),
