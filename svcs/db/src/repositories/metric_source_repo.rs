@@ -51,7 +51,7 @@ impl<'a> MetricSourceRepository<'a> {
 
         info!(id, name, "Metric source created");
         self.get_by_id(id).await?.ok_or_else(|| {
-            crate::error::DbError::NotFound(format!("Metric source {} not found after insert", id))
+            crate::error::DbError::NotFound(format!("Metric source {id} not found after insert"))
         })
     }
 
@@ -180,15 +180,14 @@ impl<'a> MetricSourceRepository<'a> {
         };
 
         if rows_affected == 0 {
-            return Err(crate::error::DbError::NotFound(format!(
-                "Metric source {} not found",
-                id
-            )));
+              return Err(crate::error::DbError::NotFound(format!(
+                  "Metric source {id} not found"
+              )));
         }
 
         info!(id, "Metric source updated");
         self.get_by_id(id).await?.ok_or_else(|| {
-            crate::error::DbError::NotFound(format!("Metric source {} not found after update", id))
+            crate::error::DbError::NotFound(format!("Metric source {id} not found after update"))
         })
     }
 

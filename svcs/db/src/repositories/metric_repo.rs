@@ -277,6 +277,9 @@ impl<'a> MetricRepository<'a> {
         debug!(count = labels.len(), "Query completed");
         Ok(labels)
     }
+    /// Delete metrics older than the specified timestamp.
+    ///
+    /// Returns the number of metrics deleted.
     pub async fn delete_older_than(&self, timestamp: DateTime<Utc>) -> DbResult<u64> {
         info!(?timestamp, "Deleting metrics older than timestamp");
 
