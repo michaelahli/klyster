@@ -115,7 +115,7 @@ impl CircuitBreaker {
                     state.half_open = true;
                     Ok(())
                 } else {
-                    Err(self.config.cooldown - elapsed)
+                    Err(self.config.cooldown.checked_sub(elapsed).unwrap())
                 }
             }
         }
