@@ -1,4 +1,4 @@
-//! Embedded UI bundle served from `ui/dist/`.
+//! Embedded static files served from `svcs/web/static/`.
 //!
 //! Routing rules:
 //! * `GET /` → `index.html` (SPA entry).
@@ -21,11 +21,11 @@ use axum::Router;
 use rust_embed::Embed;
 
 const INDEX_FILE: &str = "index.html";
-const ASSETS_PREFIX: &str = "assets/";
+const ASSETS_PREFIX: &str = "dist/";
 
-/// Embedded contents of `ui/dist/` produced by the `build.rs` script.
+/// Embedded contents of `static/` produced by the `build.rs` script.
 #[derive(Embed)]
-#[folder = "$CARGO_MANIFEST_DIR/../../ui/dist/"]
+#[folder = "$CARGO_MANIFEST_DIR/static/"]
 struct UiBundle;
 
 /// Build the static-file router for everything outside the API surface.

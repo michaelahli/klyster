@@ -51,7 +51,6 @@ svcs/seer/analytics_pb2.py
 svcs/seer/analytics_pb2_grpc.py
 svcs/seer/analytics_pb2.pyi
 
-# UI build artifacts (UI is built separately and embedded by build.rs)
-ui/node_modules/
-ui/dist/
-ui/.svelte-kit/
+# UI build artifacts (CSS is built separately and embedded by build.rs)
+svcs/web/node_modules/
+svcs/web/static/dist/
