@@ -123,6 +123,25 @@ services:
     networks:
       - klyster-network
 
+  # Node Exporter for system metrics
+  node-exporter:
+    image: prom/node-exporter:latest
+    container_name: klyster-node-exporter
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.sysfs=/host/sys'
+      - '--path.rootfs=/host'
+      - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
+    ports:
+      - "9100:9100"
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/host:ro
+    restart: unless-stopped
+    networks:
+      - klyster-network
+
   # Grafana for visualization (optional)
   grafana:
     image: grafana/grafana:latest
