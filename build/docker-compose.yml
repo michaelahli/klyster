@@ -23,7 +23,7 @@ services:
       KLYSTER_LOGGING__LEVEL: info
       KLYSTER_LOGGING__FORMAT: json
     ports:
-      - "8282:8080"
+      - "7272:8080"
     volumes:
       - klyster_data:/app/data
     depends_on:
@@ -51,7 +51,7 @@ services:
     environment:
       PYTHONUNBUFFERED: "1"
     ports:
-      - "50051:50051"
+      - "7171:50051"
     healthcheck:
       test:
         - CMD
