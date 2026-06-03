@@ -31,6 +31,9 @@ function navigate() {
   } else if (route === 'resources') {
     title.textContent = 'Resources';
     renderResources(content);
+  } else if (route === 'analytics') {
+    title.textContent = 'Analytics';
+    renderAnalytics(content);
   } else if (route === 'settings') {
     title.textContent = 'Settings';
     renderSources(content);
