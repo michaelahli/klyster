@@ -29,6 +29,7 @@ http.workspace = true
 chrono.workspace = true
 prometheus = "0.13"
 lazy_static = "1.4"
+reqwest = { version = "0.11", default-features = false, features = ["rustls-tls", "json"] }
 uuid = { version = "1.6", features = ["v4"] }
 validator = { version = "0.16", features = ["derive"] }
 utoipa = { version = "4.0", features = ["axum_extras"] }

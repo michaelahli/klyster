@@ -6,7 +6,7 @@ use crate::dto::sources::{
 use crate::error::{ApiError, ApiResult};
 use crate::state::AppState;
 use axum::{
-    extract::{Path, State},
+    extract::{Path, Query, State},
     http::StatusCode,
     Json,
 };
@@ -176,8 +176,6 @@ pub async fn delete_source(
 pub async fn test_connection(
     Query(params): Query<serde_json::Value>,
 ) -> ApiResult<Json<serde_json::Value>> {
-    use axum::extract::Query;
-    
     let url = params.get("url")
         .and_then(|v| v.as_str())
         .ok_or_else(|| ApiError::ValidationError("Missing 'url' parameter".to_string()))?;
