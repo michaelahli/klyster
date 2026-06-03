@@ -143,7 +143,7 @@ async function submitSourceForm(event) {
     if (authToken) config.auth_token = authToken;
   }
   
-  const payload = { name, source_type: type, config };
+  const payload = { name, type: type, config };
   
   try {
     const method = editingSourceId ? 'PUT' : 'POST';
