@@ -110,7 +110,7 @@ pub struct PrometheusAgentConfig {
 pub struct CustomQueryConfig {
     /// Metric name
     pub name: String,
-    /// PromQL query
+    /// `PromQL` query
     pub query: String,
 }
 
