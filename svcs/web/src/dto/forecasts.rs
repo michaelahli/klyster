@@ -27,6 +27,7 @@ pub struct ForecastResponse {
 
 impl ForecastResponse {
     /// Convert from domain model.
+    #[must_use] 
     pub fn from_model(forecast: domain::models::Forecast) -> Self {
         let parameters: Option<serde_json::Value> = forecast
             .parameters
@@ -75,6 +76,8 @@ pub struct ForecastPointResponse {
 
 impl ForecastPointResponse {
     /// Convert from domain model.
+    #[must_use]
+    #[allow(clippy::needless_pass_by_value)]
     pub fn from_model(point: domain::models::ForecastPoint) -> Self {
         Self {
             id: point.id,
@@ -101,7 +104,7 @@ pub struct ForecastListResponse {
 pub struct TriggerForecastRequest {
     /// Metric name to forecast.
     pub metric_name: String,
-    /// Model name to use (optional, defaults to "linear_regression").
+    /// Model name to use (optional, defaults to "`linear_regression`").
     pub model_name: Option<String>,
     /// Forecast horizon in hours (optional, defaults to 24).
     pub horizon_hours: Option<i64>,
@@ -136,6 +139,7 @@ pub struct RecommendationResponse {
 
 impl RecommendationResponse {
     /// Convert from domain model.
+    #[must_use] 
     pub fn from_model(recommendation: domain::models::Recommendation) -> Self {
         Self {
             id: recommendation.id,

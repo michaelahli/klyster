@@ -49,15 +49,16 @@ pub enum TargetHealth {
 impl Target {
     /// Gets the job name from labels.
     pub fn job(&self) -> Option<&str> {
-        self.labels.get("job").map(|s| s.as_str())
+        self.labels.get("job").map(std::string::String::as_str)
     }
 
     /// Gets the instance name from labels.
     pub fn instance(&self) -> Option<&str> {
-        self.labels.get("instance").map(|s| s.as_str())
+        self.labels.get("instance").map(std::string::String::as_str)
     }
 
     /// Checks if the target is healthy.
+    #[must_use] 
     pub fn is_healthy(&self) -> bool {
         self.health == TargetHealth::Up
     }
@@ -71,6 +72,7 @@ pub struct ServiceDiscovery {
 
 impl ServiceDiscovery {
     /// Creates a new service discovery client.
+    #[must_use] 
     pub fn new(client: PrometheusClient, config: DiscoveryConfig) -> Self {
         Self { client, config }
     }
@@ -149,7 +151,7 @@ impl ServiceDiscovery {
     /// Returns error if the API request fails.
     pub async fn discover_healthy_targets(&self) -> Result<Vec<Target>, PrometheusError> {
         let targets = self.discover_targets().await?;
-        let healthy: Vec<Target> = targets.into_iter().filter(|t| t.is_healthy()).collect();
+        let healthy: Vec<Target> = targets.into_iter().filter(Target::is_healthy).collect();
 
         info!(count = healthy.len(), "Discovered healthy targets");
         Ok(healthy)
@@ -175,6 +177,7 @@ impl ServiceDiscovery {
     }
 
     /// Gets the discovery configuration.
+    #[must_use] 
     pub fn config(&self) -> &DiscoveryConfig {
         &self.config
     }

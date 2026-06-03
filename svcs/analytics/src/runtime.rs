@@ -188,6 +188,7 @@ impl PythonRuntime {
     }
 
     /// Get installation instructions for missing packages.
+    #[must_use] 
     pub fn installation_instructions() -> String {
         format!(
             "Install required Python packages:\n  pip install {}",

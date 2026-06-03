@@ -19,6 +19,7 @@ pub enum RecommendationAction {
 
 impl RecommendationAction {
     /// Convert to database string representation.
+    #[must_use] 
     pub fn as_str(&self) -> &'static str {
         match self {
             RecommendationAction::ScaleUp => "scale_up",
@@ -57,6 +58,7 @@ pub enum RecommendationStatus {
 
 impl RecommendationStatus {
     /// Convert to database string representation.
+    #[must_use] 
     pub fn as_str(&self) -> &'static str {
         match self {
             RecommendationStatus::Pending => "pending",
@@ -150,11 +152,13 @@ pub struct Recommendation {
 
 impl Recommendation {
     /// Get the action as enum.
+    #[must_use] 
     pub fn get_action(&self) -> Option<RecommendationAction> {
         self.action.parse().ok()
     }
 
     /// Get the status as enum.
+    #[must_use] 
     pub fn get_status(&self) -> Option<RecommendationStatus> {
         self.status.parse().ok()
     }

@@ -12,6 +12,7 @@ pub struct AnalyticsFunctionRepository<'a> {
 
 impl<'a> AnalyticsFunctionRepository<'a> {
     /// Create a new analytics function repository.
+    #[must_use] 
     pub fn new(pool: &'a DatabasePool) -> Self {
         Self { pool }
     }
@@ -299,7 +300,7 @@ mod tests {
 
         // List
         let functions = repo.list_all().await.unwrap();
-        assert!(functions.len() >= 1);
+        assert!(!functions.is_empty());
 
         // Update
         let mut updated_function = function.clone();

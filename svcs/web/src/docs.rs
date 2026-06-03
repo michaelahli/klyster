@@ -1,8 +1,11 @@
 //! OpenAPI documentation generation.
 
+#![allow(clippy::needless_for_each)]
+
 use utoipa::OpenApi;
 
-/// OpenAPI documentation for Klyster API.
+/// `OpenAPI` documentation for Klyster API.
+#[allow(clippy::needless_for_each)]
 #[derive(OpenApi)]
 #[openapi(
     info(
@@ -36,7 +39,11 @@ use utoipa::OpenApi;
 )]
 pub struct ApiDoc;
 
-/// Get the OpenAPI specification as JSON.
+/// Get the `OpenAPI` specification as JSON.
+///
+/// # Panics
+/// Panics if the `OpenAPI` spec cannot be serialized to JSON.
+#[must_use]
 pub fn openapi_spec() -> String {
     ApiDoc::openapi().to_pretty_json().unwrap()
 }

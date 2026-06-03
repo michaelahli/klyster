@@ -64,7 +64,7 @@ pub async fn get_forecast(
     let result = repo
         .get_forecast(id)
         .await?
-        .ok_or_else(|| ApiError::NotFound(format!("Forecast {} not found", id)))?;
+        .ok_or_else(|| ApiError::NotFound(format!("Forecast {id} not found")))?;
 
     let (forecast, points) = result;
 

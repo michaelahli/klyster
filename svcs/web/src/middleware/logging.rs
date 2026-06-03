@@ -1,12 +1,13 @@
 //! Request/response logging middleware.
 
-use axum::{body::Body, extract::Request, middleware::Next, response::Response};
+use axum::{extract::Request, middleware::Next, response::Response};
 use std::time::Instant;
 use tracing::{info, warn};
 
 /// Middleware for detailed request/response logging.
 ///
 /// Logs every request with method, path, status, duration, and request ID.
+#[allow(clippy::cast_possible_truncation)]
 pub async fn request_logging_middleware(request: Request, next: Next) -> Response {
     let start = Instant::now();
 
@@ -19,9 +20,7 @@ pub async fn request_logging_middleware(request: Request, next: Next) -> Respons
     let request_id = request
         .headers()
         .get("x-request-id")
-        .and_then(|v| v.to_str().ok())
-        .map(|s| s.to_string())
-        .unwrap_or_else(|| uuid::Uuid::new_v4().to_string());
+        .and_then(|v| v.to_str().ok()).map_or_else(|| uuid::Uuid::new_v4().to_string(), std::string::ToString::to_string);
 
     // Process request
     let response = next.run(request).await;

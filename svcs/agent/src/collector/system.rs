@@ -8,11 +8,19 @@ use sysinfo::System;
 
 /// System metrics collector.
 pub struct SystemCollector {
+    #[allow(dead_code)]
     hostname: String,
+}
+
+impl Default for SystemCollector {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl SystemCollector {
     /// Create a new system metrics collector.
+    #[must_use] 
     pub fn new() -> Self {
         let hostname = hostname::get()
             .ok()
@@ -32,7 +40,7 @@ impl MetricCollector for SystemCollector {
         let timestamp = Utc::now();
 
         // CPU metrics
-        let total_cpu = sys.global_cpu_info().cpu_usage() as f64;
+        let total_cpu = f64::from(sys.global_cpu_info().cpu_usage());
         metrics.push(Metric {
             id: 0,
             source_id: 0,
@@ -43,8 +51,11 @@ impl MetricCollector for SystemCollector {
         });
 
         // Memory metrics
+        #[allow(clippy::cast_precision_loss)]
         let memory_used = sys.used_memory() as f64;
+        #[allow(clippy::cast_precision_loss)]
         let memory_total = sys.total_memory() as f64;
+        #[allow(clippy::cast_precision_loss)]
         let memory_available = sys.available_memory() as f64;
 
         metrics.push(Metric {
@@ -77,7 +88,7 @@ impl MetricCollector for SystemCollector {
         Ok(metrics)
     }
 
-    fn name(&self) -> &str {
+    fn name(&self) -> &'static str {
         "system"
     }
 }

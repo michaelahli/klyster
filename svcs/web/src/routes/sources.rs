@@ -49,7 +49,7 @@ pub async fn create_source(
 
     // Serialize config to JSON string
     let config_str = serde_json::to_string(&req.config)
-        .map_err(|e| ApiError::ValidationError(format!("Invalid config JSON: {}", e)))?;
+        .map_err(|e| ApiError::ValidationError(format!("Invalid config JSON: {e}")))?;
 
     let source = repo
         .create(&req.name, &req.source_type, &config_str)
@@ -92,7 +92,7 @@ pub async fn get_source(
     let source = repo
         .get_by_id(id)
         .await?
-        .ok_or_else(|| ApiError::NotFound(format!("Source with id {} not found", id)))?;
+        .ok_or_else(|| ApiError::NotFound(format!("Source with id {id} not found")))?;
 
     Ok(Json(SourceResponse::from_model(source)))
 }
@@ -136,14 +136,14 @@ pub async fn update_source(
 
     // Serialize config to JSON string
     let config_str = serde_json::to_string(&req.config)
-        .map_err(|e| ApiError::ValidationError(format!("Invalid config JSON: {}", e)))?;
+        .map_err(|e| ApiError::ValidationError(format!("Invalid config JSON: {e}")))?;
 
     let source = repo
         .update(id, &req.name, &req.source_type, &config_str)
         .await
         .map_err(|e| match e {
             db::DbError::NotFound(_) => {
-                ApiError::NotFound(format!("Source with id {} not found", id))
+                ApiError::NotFound(format!("Source with id {id} not found"))
             }
             _ => ApiError::Database(e),
         })?;
@@ -167,8 +167,7 @@ pub async fn delete_source(
         Ok(StatusCode::NO_CONTENT)
     } else {
         Err(ApiError::NotFound(format!(
-            "Source with id {} not found",
-            id
+            "Source with id {id} not found"
         )))
     }
 }

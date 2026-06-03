@@ -89,7 +89,7 @@ pub async fn readiness(State(state): State<AppState>) -> (StatusCode, Json<Healt
 /// Check database connectivity by executing a simple query.
 async fn check_database(state: &AppState) -> ComponentStatus {
     match state.db().ping().await {
-        Ok(_) => ComponentStatus {
+        Ok(()) => ComponentStatus {
             status: "ok".to_string(),
             message: None,
         },
@@ -97,7 +97,7 @@ async fn check_database(state: &AppState) -> ComponentStatus {
             warn!(error = %e, "Database health check failed");
             ComponentStatus {
                 status: "down".to_string(),
-                message: Some(format!("database unreachable: {}", e)),
+                message: Some(format!("database unreachable: {e}")),
             }
         }
     }

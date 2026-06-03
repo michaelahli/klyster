@@ -47,6 +47,7 @@ pub struct ResourceGroupResponse {
 
 impl ResourceGroupResponse {
     /// Convert from domain model.
+    #[must_use] 
     pub fn from_model(group: domain::models::ResourceGroup) -> Self {
         let config: serde_json::Value = serde_json::from_str(&group.provider_config)
             .unwrap_or(serde_json::Value::Object(serde_json::Map::new()));
@@ -108,6 +109,7 @@ pub struct ResourceResponse {
 
 impl ResourceResponse {
     /// Convert from domain model.
+    #[must_use] 
     pub fn from_model(resource: domain::models::Resource) -> Self {
         let labels: Option<serde_json::Value> =
             resource.labels.and_then(|l| serde_json::from_str(&l).ok());
@@ -162,6 +164,7 @@ pub struct ScalingTargetResponse {
 
 impl ScalingTargetResponse {
     /// Convert from domain model.
+    #[must_use] 
     pub fn from_model(target: domain::models::ScalingTarget) -> Self {
         Self {
             id: target.id,

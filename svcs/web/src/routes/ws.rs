@@ -20,10 +20,16 @@ use crate::state::AppState;
 pub enum WsMessage {
     /// Subscribe to metrics.
     #[serde(rename = "subscribe")]
-    Subscribe { metrics: Vec<String> },
+    Subscribe {
+        /// List of metric names to subscribe to.
+        metrics: Vec<String>
+    },
     /// Unsubscribe from metrics.
     #[serde(rename = "unsubscribe")]
-    Unsubscribe { metrics: Vec<String> },
+    Unsubscribe {
+        /// List of metric names to unsubscribe from.
+        metrics: Vec<String>
+    },
     /// Ping message.
     #[serde(rename = "ping")]
     Ping,
@@ -166,6 +172,7 @@ mod tests {
     }
 
     #[test]
+    #[allow(clippy::similar_names)]
     fn test_ws_message_ping_pong() {
         let ping_json = r#"{"type":"ping"}"#;
         let ping: WsMessage = serde_json::from_str(ping_json).unwrap();

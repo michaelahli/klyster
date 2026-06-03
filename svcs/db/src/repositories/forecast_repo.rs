@@ -13,6 +13,7 @@ pub struct ForecastRepository<'a> {
 
 impl<'a> ForecastRepository<'a> {
     /// Create a new forecast repository.
+    #[must_use] 
     pub fn new(pool: &'a DatabasePool) -> Self {
         Self { pool }
     }

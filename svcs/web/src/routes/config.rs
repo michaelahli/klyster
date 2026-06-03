@@ -21,35 +21,52 @@ pub struct ConfigResponse {
     pub retention: RetentionConfigResponse,
 }
 
+/// Web server configuration response.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct WebConfigResponse {
+    /// Server host address.
     pub host: String,
+    /// Server port.
     pub port: u16,
+    /// Number of worker threads.
     pub workers: usize,
 }
 
+/// Agent configuration response.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AgentConfigResponse {
+    /// Whether agent is enabled.
     pub enabled: bool,
+    /// Collection interval in seconds.
     pub collection_interval_secs: u64,
 }
 
+/// Analytics configuration response.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AnalyticsConfigResponse {
+    /// Whether analytics is enabled.
     pub enabled: bool,
+    /// gRPC endpoint for analytics service.
     pub grpc_endpoint: String,
 }
 
+/// Logging configuration response.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct LoggingConfigResponse {
+    /// Log level.
     pub level: String,
+    /// Log format.
     pub format: String,
 }
 
+/// Retention configuration response.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RetentionConfigResponse {
+    /// Metrics retention in days.
     pub metrics_days: u32,
+    /// Forecasts retention in days.
     pub forecasts_days: u32,
+    /// Recommendations retention in days.
     pub recommendations_days: u32,
 }
 

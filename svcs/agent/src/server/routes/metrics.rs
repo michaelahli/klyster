@@ -1,7 +1,6 @@
 //! Push metrics endpoint.
 
-use axum::{extract::State, http::StatusCode, Json};
-use chrono::Utc;
+use axum::{http::StatusCode, Json};
 use serde::Deserialize;
 use tracing::{debug, error};
 

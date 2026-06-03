@@ -69,13 +69,13 @@ pub async fn query_metrics(
 
     // Parse start time
     let start = DateTime::parse_from_rfc3339(&params.start)
-        .map_err(|e| ApiError::ValidationError(format!("Invalid start time: {}", e)))?
+        .map_err(|e| ApiError::ValidationError(format!("Invalid start time: {e}")))?
         .with_timezone(&Utc);
 
     // Parse end time (default to now)
     let end = if let Some(end_str) = &params.end {
         DateTime::parse_from_rfc3339(end_str)
-            .map_err(|e| ApiError::ValidationError(format!("Invalid end time: {}", e)))?
+            .map_err(|e| ApiError::ValidationError(format!("Invalid end time: {e}")))?
             .with_timezone(&Utc)
     } else {
         Utc::now()
@@ -99,8 +99,10 @@ pub async fn query_metrics(
     }
 
     // Apply limit
-    if metrics.len() > limit as usize {
-        metrics.truncate(limit as usize);
+    #[allow(clippy::cast_sign_loss, clippy::cast_possible_truncation)]
+    let limit_usize = limit as usize;
+    if metrics.len() > limit_usize {
+        metrics.truncate(limit_usize);
     }
 
     let count = metrics.len();

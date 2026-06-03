@@ -1,6 +1,6 @@
 //! APM (Application Performance Monitoring) logging middleware.
 
-use axum::{body::Body, extract::Request, middleware::Next, response::Response};
+use axum::{extract::Request, middleware::Next, response::Response};
 use std::time::Instant;
 use tracing::{info, warn};
 use uuid::Uuid;
@@ -8,6 +8,7 @@ use uuid::Uuid;
 /// Middleware for APM logging compatible with Kibana/Elastic APM format.
 ///
 /// Logs request/response traces with duration, trace IDs, and error tracking.
+#[allow(clippy::cast_possible_truncation)]
 pub async fn apm_logging_middleware(request: Request, next: Next) -> Response {
     let start = Instant::now();
 

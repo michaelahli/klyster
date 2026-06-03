@@ -1,7 +1,6 @@
 //! Rate limiting middleware using token bucket algorithm.
 
 use axum::{
-    body::Body,
     extract::Request,
     http::StatusCode,
     middleware::Next,
@@ -35,6 +34,7 @@ struct TokenBucket {
 
 impl RateLimiter {
     /// Create a new rate limiter.
+    #[must_use] 
     pub fn new(requests_per_minute: u32) -> Self {
         Self {
             state: Arc::new(Mutex::new(RateLimiterState {
@@ -59,14 +59,14 @@ impl RateLimiter {
         }
 
         let bucket = state.buckets.entry(ip).or_insert_with(|| TokenBucket {
-            tokens: self.requests_per_minute as f64,
+            tokens: f64::from(self.requests_per_minute),
             last_refill: Instant::now(),
         });
 
         // Refill tokens based on time elapsed
         let elapsed = bucket.last_refill.elapsed();
-        let tokens_to_add = (elapsed.as_secs_f64() / 60.0) * self.requests_per_minute as f64;
-        bucket.tokens = (bucket.tokens + tokens_to_add).min(self.requests_per_minute as f64);
+        let tokens_to_add = (elapsed.as_secs_f64() / 60.0) * f64::from(self.requests_per_minute);
+        bucket.tokens = (bucket.tokens + tokens_to_add).min(f64::from(self.requests_per_minute));
         bucket.last_refill = Instant::now();
 
         // Check if we have tokens available
@@ -75,8 +75,9 @@ impl RateLimiter {
             Ok(())
         } else {
             // Calculate retry-after in seconds
+            #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
             let retry_after =
-                ((1.0 - bucket.tokens) / self.requests_per_minute as f64 * 60.0).ceil() as u64;
+                ((1.0 - bucket.tokens) / f64::from(self.requests_per_minute) * 60.0).ceil() as u64;
             Err(retry_after)
         }
     }
@@ -100,9 +101,7 @@ pub async fn rate_limit_middleware(
             // In production, you'd want to check X-Forwarded-For header
             let ip = request
                 .extensions()
-                .get::<std::net::SocketAddr>()
-                .map(|addr| addr.ip())
-                .unwrap_or_else(|| IpAddr::from([127, 0, 0, 1]));
+                .get::<std::net::SocketAddr>().map_or_else(|| IpAddr::from([127, 0, 0, 1]), std::net::SocketAddr::ip);
 
             match limiter.check_rate_limit(ip).await {
                 Ok(()) => next.run(request).await,

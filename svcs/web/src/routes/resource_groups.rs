@@ -45,7 +45,7 @@ pub async fn create_group(
 
     // Serialize config to JSON string
     let config_str = serde_json::to_string(&req.provider_config)
-        .map_err(|e| ApiError::ValidationError(format!("Invalid config JSON: {}", e)))?;
+        .map_err(|e| ApiError::ValidationError(format!("Invalid config JSON: {e}")))?;
 
     let group = ResourceGroup {
         id: 0,
@@ -104,7 +104,7 @@ pub async fn get_group(
     let group = repo
         .get_group(id)
         .await?
-        .ok_or_else(|| ApiError::NotFound(format!("Resource group {} not found", id)))?;
+        .ok_or_else(|| ApiError::NotFound(format!("Resource group {id} not found")))?;
 
     let resources = repo.list_by_group(id).await?;
     let scaling_targets = repo.get_scaling_targets_by_group(id).await?;
@@ -155,11 +155,11 @@ pub async fn update_group(
     let existing = repo
         .get_group(id)
         .await?
-        .ok_or_else(|| ApiError::NotFound(format!("Resource group {} not found", id)))?;
+        .ok_or_else(|| ApiError::NotFound(format!("Resource group {id} not found")))?;
 
     // Serialize config to JSON string
     let config_str = serde_json::to_string(&req.provider_config)
-        .map_err(|e| ApiError::ValidationError(format!("Invalid config JSON: {}", e)))?;
+        .map_err(|e| ApiError::ValidationError(format!("Invalid config JSON: {e}")))?;
 
     let updated_group = ResourceGroup {
         id,
@@ -194,8 +194,7 @@ pub async fn delete_group(
     // Check if group exists
     if repo.get_group(id).await?.is_none() {
         return Err(ApiError::NotFound(format!(
-            "Resource group {} not found",
-            id
+            "Resource group {id} not found"
         )));
     }
 
@@ -203,8 +202,7 @@ pub async fn delete_group(
 
     if rows == 0 {
         return Err(ApiError::NotFound(format!(
-            "Resource group {} not found",
-            id
+            "Resource group {id} not found"
         )));
     }
 
@@ -257,8 +255,7 @@ pub async fn set_scaling_target(
     // Check if group exists
     if repo.get_group(id).await?.is_none() {
         return Err(ApiError::NotFound(format!(
-            "Resource group {} not found",
-            id
+            "Resource group {id} not found"
         )));
     }
 
@@ -302,8 +299,7 @@ pub async fn list_resources(
     // Check if group exists
     if repo.get_group(id).await?.is_none() {
         return Err(ApiError::NotFound(format!(
-            "Resource group {} not found",
-            id
+            "Resource group {id} not found"
         )));
     }
 

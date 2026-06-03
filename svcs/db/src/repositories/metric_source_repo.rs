@@ -12,6 +12,7 @@ pub struct MetricSourceRepository<'a> {
 
 impl<'a> MetricSourceRepository<'a> {
     /// Create a new metric source repository.
+    #[must_use] 
     pub fn new(pool: &'a DatabasePool) -> Self {
         Self { pool }
     }

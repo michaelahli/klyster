@@ -46,7 +46,7 @@ impl IntoResponse for ValidationError {
     fn into_response(self) -> Response {
         match self {
             ValidationError::JsonRejection(rejection) => {
-                let message = format!("Invalid JSON: {}", rejection);
+                let message = format!("Invalid JSON: {rejection}");
                 let body = serde_json::json!({
                     "error": {
                         "code": "invalid_json",
@@ -62,7 +62,7 @@ impl IntoResponse for ValidationError {
                     .map(|(field, errors)| {
                         let messages: Vec<String> = errors
                             .iter()
-                            .filter_map(|e| e.message.as_ref().map(|m| m.to_string()))
+                            .filter_map(|e| e.message.as_ref().map(std::string::ToString::to_string))
                             .collect();
                         serde_json::json!({
                             "field": field,

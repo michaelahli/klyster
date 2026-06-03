@@ -50,7 +50,7 @@ pub async fn get_function(
     let function = repo
         .get_by_id(id)
         .await?
-        .ok_or_else(|| ApiError::NotFound(format!("Analytics function {} not found", id)))?;
+        .ok_or_else(|| ApiError::NotFound(format!("Analytics function {id} not found")))?;
 
     Ok(Json(FunctionResponse::from_model(function)))
 }
@@ -115,7 +115,7 @@ pub async fn create_function(
         .parameters_schema
         .map(|p| serde_json::to_string(&p))
         .transpose()
-        .map_err(|e| ApiError::ValidationError(format!("Invalid parameters schema: {}", e)))?;
+        .map_err(|e| ApiError::ValidationError(format!("Invalid parameters schema: {e}")))?;
 
     let now = Utc::now();
     let function = AnalyticsFunction {
@@ -160,7 +160,7 @@ pub async fn update_function(
     let existing = repo
         .get_by_id(id)
         .await?
-        .ok_or_else(|| ApiError::NotFound(format!("Analytics function {} not found", id)))?;
+        .ok_or_else(|| ApiError::NotFound(format!("Analytics function {id} not found")))?;
 
     // Cannot update predefined functions
     if existing.function_type == "predefined" {
@@ -194,7 +194,7 @@ pub async fn update_function(
         .parameters_schema
         .map(|p| serde_json::to_string(&p))
         .transpose()
-        .map_err(|e| ApiError::ValidationError(format!("Invalid parameters schema: {}", e)))?;
+        .map_err(|e| ApiError::ValidationError(format!("Invalid parameters schema: {e}")))?;
 
     let updated_function = AnalyticsFunction {
         id,
@@ -234,7 +234,7 @@ pub async fn delete_function(
     let existing = repo
         .get_by_id(id)
         .await?
-        .ok_or_else(|| ApiError::NotFound(format!("Analytics function {} not found", id)))?;
+        .ok_or_else(|| ApiError::NotFound(format!("Analytics function {id} not found")))?;
 
     // Cannot delete predefined functions
     if existing.function_type == "predefined" {
@@ -247,8 +247,7 @@ pub async fn delete_function(
 
     if rows == 0 {
         return Err(ApiError::NotFound(format!(
-            "Analytics function {} not found",
-            id
+            "Analytics function {id} not found"
         )));
     }
 

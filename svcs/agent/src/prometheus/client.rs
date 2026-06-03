@@ -11,7 +11,7 @@ use url::Url;
 /// Prometheus client configuration.
 #[derive(Debug, Clone)]
 pub struct PrometheusConfig {
-    /// Prometheus server URL (e.g., "http://localhost:9090")
+    /// Prometheus server URL (e.g., "<http://localhost:9090>")
     pub url: String,
     /// Request timeout
     pub timeout: Duration,
@@ -236,6 +236,7 @@ impl PrometheusClient {
     }
 
     /// Gets the Prometheus server configuration.
+    #[must_use] 
     pub fn config(&self) -> &PrometheusConfig {
         &self.config
     }
@@ -247,6 +248,7 @@ struct ApiResponse {
     status: String,
     data: Option<ApiData>,
     #[serde(rename = "errorType")]
+    #[allow(dead_code)]
     error_type: Option<String>,
     error: Option<String>,
 }
@@ -255,6 +257,7 @@ struct ApiResponse {
 #[derive(Debug, Deserialize)]
 struct ApiData {
     #[serde(rename = "resultType")]
+    #[allow(dead_code)]
     result_type: String,
     result: Option<QueryResult>,
 }
@@ -288,23 +291,25 @@ pub enum TimeSeriesData {
 impl TimeSeries {
     /// Gets the metric name from labels.
     pub fn metric_name(&self) -> Option<&str> {
-        self.metric.get("__name__").map(|s| s.as_str())
+        self.metric.get("__name__").map(std::string::String::as_str)
     }
 
     /// Extracts all data points as (timestamp, value) pairs.
     pub fn data_points(&self) -> Vec<(DateTime<Utc>, f64)> {
         match &self.data {
             TimeSeriesData::Instant { value } => {
+                #[allow(clippy::cast_possible_truncation)]
                 let timestamp =
-                    DateTime::from_timestamp(value.0 as i64, 0).unwrap_or_else(|| Utc::now());
+                    DateTime::from_timestamp(value.0 as i64, 0).unwrap_or_else(Utc::now);
                 let val = value.1.parse::<f64>().unwrap_or(0.0);
                 vec![(timestamp, val)]
             }
             TimeSeriesData::Range { values } => values
                 .iter()
                 .filter_map(|(ts, val_str)| {
+                    #[allow(clippy::cast_possible_truncation)]
                     let timestamp =
-                        DateTime::from_timestamp(*ts as i64, 0).unwrap_or_else(|| Utc::now());
+                        DateTime::from_timestamp(*ts as i64, 0).unwrap_or_else(Utc::now);
                     let val = val_str.parse::<f64>().ok()?;
                     Some((timestamp, val))
                 })
@@ -351,7 +356,7 @@ mod tests {
         let ts = TimeSeries {
             metric: labels,
             data: TimeSeriesData::Instant {
-                value: (1234567890.0, "0.5".to_string()),
+                value: (1_234_567_890.0, "0.5".to_string()),
             },
         };
 
@@ -359,11 +364,12 @@ mod tests {
     }
 
     #[test]
+    #[allow(clippy::float_cmp)]
     fn test_time_series_data_points_instant() {
         let ts = TimeSeries {
             metric: MetricLabels::new(),
             data: TimeSeriesData::Instant {
-                value: (1234567890.0, "0.75".to_string()),
+                value: (1_234_567_890.0, "0.75".to_string()),
             },
         };
 
@@ -373,14 +379,15 @@ mod tests {
     }
 
     #[test]
+    #[allow(clippy::float_cmp)]
     fn test_time_series_data_points_range() {
         let ts = TimeSeries {
             metric: MetricLabels::new(),
             data: TimeSeriesData::Range {
                 values: vec![
-                    (1234567890.0, "0.5".to_string()),
-                    (1234567900.0, "0.6".to_string()),
-                    (1234567910.0, "0.7".to_string()),
+                    (1_234_567_890.0, "0.5".to_string()),
+                    (1_234_567_900.0, "0.6".to_string()),
+                    (1_234_567_910.0, "0.7".to_string()),
                 ],
             },
         };

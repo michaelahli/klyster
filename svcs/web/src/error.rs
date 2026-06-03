@@ -49,17 +49,18 @@ pub enum ApiError {
 
 impl ApiError {
     /// Get the HTTP status code for this error.
+    #[must_use] 
     pub fn status_code(&self) -> StatusCode {
         match self {
             ApiError::NotFound(_) => StatusCode::NOT_FOUND,
             ApiError::ValidationError(_) => StatusCode::UNPROCESSABLE_ENTITY,
-            ApiError::Database(_) => StatusCode::INTERNAL_SERVER_ERROR,
-            ApiError::Internal(_) => StatusCode::INTERNAL_SERVER_ERROR,
+            ApiError::Database(_) | ApiError::Internal(_) => StatusCode::INTERNAL_SERVER_ERROR,
             ApiError::Conflict(_) => StatusCode::CONFLICT,
         }
     }
 
     /// Get the error code string.
+    #[must_use] 
     pub fn error_code(&self) -> &str {
         match self {
             ApiError::NotFound(_) => "not_found",

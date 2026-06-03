@@ -37,6 +37,7 @@ pub struct PrometheusAdapter {
 
 impl PrometheusAdapter {
     /// Creates a new Prometheus adapter.
+    #[must_use] 
     pub fn new(client: PrometheusClient, source_id: i64) -> Self {
         Self { client, source_id }
     }
@@ -112,7 +113,9 @@ impl PrometheusAdapter {
                 }
             }
 
-            if !all_labels.is_empty() {
+            if all_labels.is_empty() {
+                info!(count = count, metric_name = %metric_name, "Metrics collected and stored");
+            } else {
                 repo.insert_labels_batch(&all_labels).await?;
                 info!(
                     metric_count = count,
@@ -120,8 +123,6 @@ impl PrometheusAdapter {
                     metric_name = %metric_name,
                     "Metrics and labels collected and stored"
                 );
-            } else {
-                info!(count = count, metric_name = %metric_name, "Metrics collected and stored");
             }
         }
 
@@ -178,6 +179,7 @@ impl PrometheusAdapter {
                 }
 
                 if !labels.is_empty() {
+                    #[allow(clippy::cast_possible_wrap)]
                     labels_map.insert(idx as i64, labels);
                 }
             }
@@ -343,11 +345,13 @@ impl PrometheusAdapter {
     }
 
     /// Gets the Prometheus client.
+    #[must_use] 
     pub fn client(&self) -> &PrometheusClient {
         &self.client
     }
 
     /// Gets the source ID.
+    #[must_use] 
     pub fn source_id(&self) -> i64 {
         self.source_id
     }

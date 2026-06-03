@@ -7,7 +7,6 @@ use crate::error::{ApiError, ApiResult};
 use crate::state::AppState;
 use axum::{
     extract::{Path, Query, State},
-    http::StatusCode,
     Json,
 };
 use db::repositories::ForecastRepository;
@@ -93,8 +92,7 @@ pub async fn approve_recommendation(
 
     if rows == 0 {
         return Err(ApiError::NotFound(format!(
-            "Recommendation {} not found",
-            id
+            "Recommendation {id} not found"
         )));
     }
 
@@ -134,8 +132,7 @@ pub async fn dismiss_recommendation(
 
     if rows == 0 {
         return Err(ApiError::NotFound(format!(
-            "Recommendation {} not found",
-            id
+            "Recommendation {id} not found"
         )));
     }
 

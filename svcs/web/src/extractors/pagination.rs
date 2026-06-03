@@ -31,16 +31,19 @@ impl Pagination {
     pub const MAX_PER_PAGE: u32 = 100;
 
     /// Calculate the offset for database queries.
+    #[must_use] 
     pub fn offset(&self) -> u32 {
         (self.page.saturating_sub(1)) * self.per_page
     }
 
-    /// Get the limit (capped at MAX_PER_PAGE).
+    /// Get the limit (capped at `MAX_PER_PAGE`).
+    #[must_use] 
     pub fn limit(&self) -> u32 {
         self.per_page.min(Self::MAX_PER_PAGE)
     }
 
     /// Validate and normalize pagination parameters.
+    #[must_use] 
     pub fn normalize(mut self) -> Self {
         if self.page == 0 {
             self.page = 1;
