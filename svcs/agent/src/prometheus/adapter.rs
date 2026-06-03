@@ -41,7 +41,7 @@ impl PrometheusAdapter {
         Self { client, source_id }
     }
 
-    /// Collects metrics with labels using the given PromQL query.
+    /// Collects metrics with labels using the given `PromQL` query.
     ///
     /// # Errors
     ///

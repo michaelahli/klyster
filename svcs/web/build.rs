@@ -1,4 +1,4 @@
-//! Build script: run PostCSS to build Tailwind CSS.
+//! Build script: run `PostCSS` to build Tailwind CSS.
 //!
 //! Strategy:
 //! 1. If `KLYSTER_SKIP_UI_BUILD=1` is set, skip everything.

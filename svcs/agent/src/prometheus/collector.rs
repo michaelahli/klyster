@@ -25,7 +25,7 @@ pub struct CollectorConfig {
 pub struct CustomQuery {
     /// Metric name to store
     pub name: String,
-    /// PromQL query
+    /// `PromQL` query
     pub query: String,
 }
 
