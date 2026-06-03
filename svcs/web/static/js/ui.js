@@ -19,17 +19,36 @@ if (sidebarBackdrop) {
 
 // Theme toggle
 const themeToggle = document.getElementById('theme-toggle');
-let theme = localStorage.getItem('theme') || 'light';
+let theme = localStorage.getItem('theme') || 'auto';
+
+function getSystemTheme() {
+  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+}
 
 function applyTheme(t) {
-  document.documentElement.classList.toggle('dark', t === 'dark');
-  themeToggle.textContent = t === 'dark' ? '☀️' : '🌙';
+  const effectiveTheme = t === 'auto' ? getSystemTheme() : t;
+  document.documentElement.classList.toggle('dark', effectiveTheme === 'dark');
+  
+  // Update button text based on current mode
+  const icons = { auto: '🌓', light: '☀️', dark: '🌙' };
+  themeToggle.textContent = icons[t] || '🌓';
+  themeToggle.title = `Theme: ${t}`;
 }
 
 applyTheme(theme);
 
+// Listen for system theme changes when in auto mode
+window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+  if (theme === 'auto') {
+    applyTheme('auto');
+  }
+});
+
 themeToggle.addEventListener('click', () => {
-  theme = theme === 'dark' ? 'light' : 'dark';
+  // Cycle through: auto -> light -> dark -> auto
+  const modes = ['auto', 'light', 'dark'];
+  const currentIndex = modes.indexOf(theme);
+  theme = modes[(currentIndex + 1) % modes.length];
   localStorage.setItem('theme', theme);
   applyTheme(theme);
 });

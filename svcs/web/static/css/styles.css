@@ -22,3 +22,26 @@ body {
   background-color: var(--color-bg);
   color: var(--color-text);
 }
+
+/* Responsive touch targets (min 44x44px) */
+button, a {
+  min-height: 44px;
+  min-width: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Horizontal scroll for tables on mobile */
+@media (max-width: 768px) {
+  table {
+    display: block;
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+  
+  /* Larger font sizes for mobile readability */
+  body {
+    font-size: 16px;
+  }
+}
