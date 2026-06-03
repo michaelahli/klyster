@@ -1,0 +1,22 @@
+# Klyster Agent Configuration
+
+[agent]
+# Agent server bind address
+bind_address = "0.0.0.0:8081"
+
+# Collection interval in seconds
+collection_interval = 60
+
+# Enabled collectors (comma-separated)
+enabled_collectors = ["system"]
+
+[server]
+# Central server URL for registration and heartbeat
+url = "http://localhost:8080"
+
+# API key for authentication
+api_key = ""
+
+[collectors.system]
+# System metrics collection enabled
+enabled = true
