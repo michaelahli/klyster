@@ -62,6 +62,7 @@ pub fn build_router(state: AppState) -> Router {
         .route("/info", get(root))
         .route("/sources", post(sources::create_source))
         .route("/sources", get(sources::list_sources))
+        .route("/sources/test", get(sources::test_connection))
         .route("/sources/:id", get(sources::get_source))
         .route("/sources/:id", put(sources::update_source))
         .route("/sources/:id", delete(sources::delete_source))

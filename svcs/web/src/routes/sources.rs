@@ -170,6 +170,45 @@ pub async fn delete_source(
     }
 }
 
+/// Test Prometheus connection.
+///
+/// GET /api/v1/sources/test?url=...
+pub async fn test_connection(
+    Query(params): Query<serde_json::Value>,
+) -> ApiResult<Json<serde_json::Value>> {
+    use axum::extract::Query;
+    
+    let url = params.get("url")
+        .and_then(|v| v.as_str())
+        .ok_or_else(|| ApiError::ValidationError("Missing 'url' parameter".to_string()))?;
+
+    // Simple connection test
+    let client = reqwest::Client::builder()
+        .timeout(std::time::Duration::from_secs(5))
+        .build()
+        .map_err(|e| ApiError::Internal(format!("Failed to create client: {e}")))?
+;
+
+    let response = client
+        .get(format!("{}/api/v1/query?query=up", url))
+        .send()
+        .await
+        .map_err(|e| ApiError::Internal(format!("Connection failed: {e}")))?
+;
+
+    if response.status().is_success() {
+        Ok(Json(serde_json::json!({
+            "status": "success",
+            "message": "Successfully connected to Prometheus"
+        })))
+    } else {
+        Err(ApiError::Internal(format!(
+            "Prometheus returned status: {}",
+            response.status()
+        )))
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
