@@ -40,6 +40,7 @@ async fn create_test_pool() -> DatabasePool {
         telemetry: TelemetryConfig::default(),
         metrics: MetricsConfig::default(),
         retention: RetentionConfig::default(),
+        kubernetes: domain::config::KubernetesConfig::default(),
     };
 
     let pool = DatabasePool::new(&config).await.unwrap();
