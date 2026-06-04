@@ -227,8 +227,8 @@ mod tests {
     use super::*;
     use crate::migrate::run_migrations;
     use domain::config::{
-        AgentConfig, AnalyticsConfig, DatabaseConfig, LoggingConfig, MetricsConfig,
-        RetentionConfig, TelemetryConfig, WebConfig,
+        AgentConfig, AnalyticsConfig, DatabaseConfig, KubernetesConfig, LoggingConfig,
+        MetricsConfig, RetentionConfig, TelemetryConfig, WebConfig,
     };
     use domain::Config;
 
