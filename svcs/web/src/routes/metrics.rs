@@ -291,8 +291,9 @@ mod tests {
 
         let now = Utc::now();
         let params = MetricQueryParams {
-            start: (now - Duration::minutes(15)).to_rfc3339(),
+            start: Some((now - Duration::minutes(15)).to_rfc3339()),
             end: Some(now.to_rfc3339()),
+            hours: None,
             source_id: None,
             step: None,
             limit: None,
@@ -315,8 +316,9 @@ mod tests {
 
         let now = Utc::now();
         let params = MetricQueryParams {
-            start: (now - Duration::minutes(15)).to_rfc3339(),
+            start: Some((now - Duration::minutes(15)).to_rfc3339()),
             end: Some(now.to_rfc3339()),
+            hours: None,
             source_id: Some(source_id),
             step: None,
             limit: None,
@@ -336,8 +338,9 @@ mod tests {
         let (state, _) = test_state().await;
 
         let params = MetricQueryParams {
-            start: "invalid".to_string(),
+            start: Some("invalid".to_string()),
             end: None,
+            hours: None,
             source_id: None,
             step: None,
             limit: None,
@@ -355,8 +358,9 @@ mod tests {
 
         let now = Utc::now();
         let params = MetricQueryParams {
-            start: now.to_rfc3339(),
+            start: Some(now.to_rfc3339()),
             end: Some((now - Duration::hours(1)).to_rfc3339()),
+            hours: None,
             source_id: None,
             step: None,
             limit: None,
@@ -395,8 +399,9 @@ mod tests {
 
         let now = Utc::now();
         let params = MetricQueryParams {
-            start: (now - Duration::minutes(15)).to_rfc3339(),
+            start: Some((now - Duration::minutes(15)).to_rfc3339()),
             end: Some(now.to_rfc3339()),
+            hours: None,
             source_id: None,
             step: None,
             limit: Some(1),
