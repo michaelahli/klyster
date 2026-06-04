@@ -65,7 +65,10 @@ impl KubernetesProvider {
         if self.namespaces.is_empty() {
             vec![]
         } else {
-            self.namespaces.iter().map(std::string::String::as_str).collect()
+            self.namespaces
+                .iter()
+                .map(std::string::String::as_str)
+                .collect()
         }
     }
 }
@@ -76,12 +79,9 @@ impl InfraProvider for KubernetesProvider {
 
     async fn get_resources(&self) -> Result<Vec<Resource>, Self::Error> {
         debug!("Discovering Kubernetes resources");
-        
-        let discovery = ResourceDiscovery::new(
-            (*self.client).clone(),
-            self.namespaces.clone(),
-        );
-        
+
+        let discovery = ResourceDiscovery::new((*self.client).clone(), self.namespaces.clone());
+
         discovery.discover_all().await
     }
 
@@ -99,11 +99,7 @@ impl InfraProvider for KubernetesProvider {
         })
     }
 
-    async fn validate_scale_target(
-        &self,
-        group_id: &str,
-        target: u32,
-    ) -> Result<(), Self::Error> {
+    async fn validate_scale_target(&self, group_id: &str, target: u32) -> Result<(), Self::Error> {
         debug!("Validating scale target {} for group: {}", target, group_id);
 
         // Basic validation: target must be > 0

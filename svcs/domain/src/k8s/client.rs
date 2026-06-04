@@ -39,13 +39,16 @@ pub async fn init_client(kubeconfig_path: Option<&str>) -> K8sResult<Client> {
         .map_err(|e| K8sClientError::ConfigError(e.to_string()))?
     } else {
         debug!("Loading in-cluster config");
-            match Config::incluster() {
-                Ok(cfg) => cfg,
-                Err(e) => {
-                    debug!("In-cluster config failed, falling back to kubeconfig: {}", e);
-                    Config::from_kubeconfig(&kube::config::KubeConfigOptions::default())
-                        .await
-                        .map_err(|e| K8sClientError::ConfigError(e.to_string()))?
+        match Config::incluster() {
+            Ok(cfg) => cfg,
+            Err(e) => {
+                debug!(
+                    "In-cluster config failed, falling back to kubeconfig: {}",
+                    e
+                );
+                Config::from_kubeconfig(&kube::config::KubeConfigOptions::default())
+                    .await
+                    .map_err(|e| K8sClientError::ConfigError(e.to_string()))?
             }
         }
     };

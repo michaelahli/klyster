@@ -30,8 +30,7 @@ pub trait InfraProvider: Send + Sync {
     async fn get_current_capacity(&self, group_id: &str) -> Result<Capacity, Self::Error>;
 
     /// Validate that a scale target is within acceptable bounds.
-    async fn validate_scale_target(&self, group_id: &str, target: u32)
-        -> Result<(), Self::Error>;
+    async fn validate_scale_target(&self, group_id: &str, target: u32) -> Result<(), Self::Error>;
 
     /// Provider name for logging and identification.
     fn name(&self) -> &str;
