@@ -455,8 +455,8 @@ mod tests {
 
     async fn setup_pool() -> DatabasePool {
         use domain::config::{
-            AgentConfig, AnalyticsConfig, DatabaseConfig, LoggingConfig, MetricsConfig,
-            PrometheusAgentConfig, RetentionConfig, TelemetryConfig, WebConfig,
+            AgentConfig, AnalyticsConfig, DatabaseConfig, KubernetesConfig, LoggingConfig,
+            MetricsConfig, PrometheusAgentConfig, RetentionConfig, TelemetryConfig, WebConfig,
         };
         use domain::Config;
 
