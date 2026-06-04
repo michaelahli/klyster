@@ -1,6 +1,6 @@
 //! Kubernetes infrastructure provider implementation.
 
-use crate::k8s::{init_client, K8sClientError};
+use crate::k8s::{discovery::ResourceDiscovery, init_client, K8sClientError};
 use crate::models::Resource;
 use crate::provider::{Capacity, InfraProvider};
 use k8s_openapi::api::apps::v1::{Deployment, StatefulSet};
@@ -76,13 +76,13 @@ impl InfraProvider for KubernetesProvider {
 
     async fn get_resources(&self) -> Result<Vec<Resource>, Self::Error> {
         debug!("Discovering Kubernetes resources");
-        let mut resources = Vec::new();
-
-        // TODO: Implement full resource discovery
-        // For now, return empty list - will be implemented with Resource model
-        warn!("get_resources not yet implemented - Resource model pending");
-
-        Ok(resources)
+        
+        let discovery = ResourceDiscovery::new(
+            (*self.client).clone(),
+            self.namespaces.clone(),
+        );
+        
+        discovery.discover_all().await
     }
 
     async fn get_current_capacity(&self, group_id: &str) -> Result<Capacity, Self::Error> {
