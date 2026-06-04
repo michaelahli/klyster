@@ -8,6 +8,8 @@ pub mod k8s;
 pub mod logging;
 /// Domain models.
 pub mod models;
+/// Infrastructure provider abstractions.
+pub mod provider;
 /// Recommendation engine: pure decision logic on top of forecasts.
 pub mod recommendation_engine;
 /// Graceful shutdown orchestration.
