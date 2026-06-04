@@ -188,7 +188,7 @@ pub async fn test_connection(
 ;
 
     let response = client
-        .get(format!("{}/api/v1/query?query=up", url))
+        .get(format!("{url}/api/v1/query?query=up"))
         .send()
         .await
         .map_err(|e| ApiError::Internal(format!("Connection failed: {e}")))?
