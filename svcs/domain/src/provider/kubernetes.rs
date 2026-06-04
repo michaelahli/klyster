@@ -3,10 +3,9 @@
 use crate::k8s::{discovery::ResourceDiscovery, init_client, K8sClientError};
 use crate::models::Resource;
 use crate::provider::{Capacity, InfraProvider};
-use k8s_openapi::api::apps::v1::{Deployment, StatefulSet};
-use kube::{Api, Client};
+use kube::Client;
 use std::sync::Arc;
-use tracing::{debug, error, warn};
+use tracing::{debug, warn};
 
 /// Kubernetes provider error.
 #[derive(Debug, thiserror::Error)]
@@ -61,11 +60,12 @@ impl KubernetesProvider {
     }
 
     /// Get namespaces to query (empty = all namespaces).
+    #[allow(dead_code)]
     fn target_namespaces(&self) -> Vec<&str> {
         if self.namespaces.is_empty() {
             vec![]
         } else {
-            self.namespaces.iter().map(|s| s.as_str()).collect()
+            self.namespaces.iter().map(std::string::String::as_str).collect()
         }
     }
 }
@@ -119,7 +119,7 @@ impl InfraProvider for KubernetesProvider {
         Ok(())
     }
 
-    fn name(&self) -> &str {
+    fn name(&self) -> &'static str {
         "kubernetes"
     }
 }
