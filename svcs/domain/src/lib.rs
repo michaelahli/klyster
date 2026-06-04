@@ -2,6 +2,8 @@
 
 /// Configuration management.
 pub mod config;
+/// Kubernetes integration.
+pub mod k8s;
 /// Logging initialization.
 pub mod logging;
 /// Domain models.

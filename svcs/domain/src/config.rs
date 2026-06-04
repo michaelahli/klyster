@@ -26,6 +26,9 @@ pub struct Config {
     /// Data retention configuration
     #[serde(default)]
     pub retention: RetentionConfig,
+    /// Kubernetes configuration
+    #[serde(default)]
+    pub kubernetes: KubernetesConfig,
 }
 
 /// Database configuration.
@@ -222,6 +225,24 @@ pub struct RetentionConfig {
     pub cleanup_schedule: String,
 }
 
+/// Kubernetes configuration.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct KubernetesConfig {
+    /// Enable Kubernetes integration
+    #[serde(default = "default_k8s_enabled")]
+    pub enabled: bool,
+    /// Path to kubeconfig file (optional, uses in-cluster config if not set)
+    #[serde(default)]
+    pub kubeconfig_path: Option<String>,
+    /// Namespace filter (empty = all namespaces)
+    #[serde(default)]
+    pub namespaces: Vec<String>,
+}
+
+fn default_k8s_enabled() -> bool {
+    false
+}
+
 fn default_db_type() -> String {
     "sqlite".to_string()
 }
@@ -408,6 +429,16 @@ impl Default for RetentionConfig {
             recommendations_days: default_recommendations_days(),
             audit_logs_days: default_audit_logs_days(),
             cleanup_schedule: default_cleanup_schedule(),
+        }
+    }
+}
+
+impl Default for KubernetesConfig {
+    fn default() -> Self {
+        Self {
+            enabled: default_k8s_enabled(),
+            kubeconfig_path: None,
+            namespaces: Vec::new(),
         }
     }
 }
