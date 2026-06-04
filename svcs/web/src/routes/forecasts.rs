@@ -165,6 +165,7 @@ mod tests {
             telemetry: TelemetryConfig::default(),
             metrics: MetricsConfig::default(),
             retention: RetentionConfig::default(),
+            kubernetes: domain::config::KubernetesConfig::default(),
         }
     }
 
