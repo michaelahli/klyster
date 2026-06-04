@@ -79,7 +79,7 @@ mod tests {
     use super::*;
 
     #[tokio::test]
-    #[ignore] // Requires Kubernetes cluster
+    #[ignore = "Requires Kubernetes cluster"]
     async fn test_init_client_incluster() {
         let result = init_client(None).await;
         // Will fail in CI without K8s, that's expected
@@ -87,7 +87,7 @@ mod tests {
     }
 
     #[tokio::test]
-    #[ignore] // Requires kubeconfig
+    #[ignore = "Requires kubeconfig"]
     async fn test_init_client_kubeconfig() {
         let result = init_client(Some("~/.kube/config")).await;
         // Will fail without kubeconfig, that's expected
