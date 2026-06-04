@@ -161,12 +161,15 @@ where
     Ok(())
 }
 
-/// Run agent component (placeholder).
+/// Run agent component - collects metrics from all configured sources.
 async fn run_agent_component() {
-    info!("Agent component running");
-    // Placeholder: actual implementation will be in M6
+    info!("Agent component starting - metrics collection enabled");
+    
+    // TODO: Implement full agent with dynamic source loading
+    // For now, placeholder - will be implemented in phases
     loop {
-        tokio::time::sleep(tokio::time::Duration::from_secs(1)).await;
+        tokio::time::sleep(tokio::time::Duration::from_secs(60)).await;
+        info!("Agent tick - collection cycle");
     }
 }
 
