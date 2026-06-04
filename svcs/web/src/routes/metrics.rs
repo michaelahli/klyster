@@ -70,7 +70,7 @@ pub async fn query_metrics(
     // Calculate start/end times from params
     let end = if let Some(end_str) = &params.end {
         DateTime::parse_from_rfc3339(end_str)
-            .map_err(|e| ApiError::ValidationError(format!("Invalid end time: {e}")))?  
+            .map_err(|e| ApiError::ValidationError(format!("Invalid end time: {e}")))?
             .with_timezone(&Utc)
     } else {
         Utc::now()

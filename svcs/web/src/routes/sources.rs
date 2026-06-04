@@ -176,7 +176,8 @@ pub async fn delete_source(
 pub async fn test_connection(
     Query(params): Query<serde_json::Value>,
 ) -> ApiResult<Json<serde_json::Value>> {
-    let url = params.get("url")
+    let url = params
+        .get("url")
         .and_then(|v| v.as_str())
         .ok_or_else(|| ApiError::ValidationError("Missing 'url' parameter".to_string()))?;
 
@@ -184,15 +185,13 @@ pub async fn test_connection(
     let client = reqwest::Client::builder()
         .timeout(std::time::Duration::from_secs(5))
         .build()
-        .map_err(|e| ApiError::Internal(format!("Failed to create client: {e}")))?
-;
+        .map_err(|e| ApiError::Internal(format!("Failed to create client: {e}")))?;
 
     let response = client
         .get(format!("{url}/api/v1/query?query=up"))
         .send()
         .await
-        .map_err(|e| ApiError::Internal(format!("Connection failed: {e}")))?
-;
+        .map_err(|e| ApiError::Internal(format!("Connection failed: {e}")))?;
 
     if response.status().is_success() {
         Ok(Json(serde_json::json!({

@@ -164,7 +164,7 @@ where
 /// Run agent component - collects metrics from all configured sources.
 async fn run_agent_component() {
     info!("Agent component starting - metrics collection enabled");
-    
+
     // TODO: Implement full agent with dynamic source loading
     // For now, placeholder - will be implemented in phases
     loop {
