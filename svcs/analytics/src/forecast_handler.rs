@@ -491,6 +491,7 @@ mod tests {
             telemetry: TelemetryConfig::default(),
             metrics: MetricsConfig::default(),
             retention: RetentionConfig::default(),
+            kubernetes: KubernetesConfig::default(),
         };
         let pool = DatabasePool::new(&config).await.unwrap();
         db::migrate::run_migrations(&pool).await.unwrap();

@@ -346,6 +346,7 @@ mod tests {
             telemetry: domain::config::TelemetryConfig::default(),
             metrics: domain::config::MetricsConfig::default(),
             retention: domain::config::RetentionConfig::default(),
+            kubernetes: domain::config::KubernetesConfig::default(),
         }
     }
 
