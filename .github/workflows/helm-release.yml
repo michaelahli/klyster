@@ -10,6 +10,7 @@ env:
 
 permissions:
   contents: write
+  packages: write
   pages: write
   id-token: write
 
@@ -44,9 +45,25 @@ jobs:
         run: helm lint deploy/helm/klyster
 
       - name: Package chart
+        id: package
         run: |
           mkdir -p .cr-release-packages
           helm package deploy/helm/klyster --destination .cr-release-packages
+          CHART_PACKAGE="$(find .cr-release-packages -name 'klyster-*.tgz' -print -quit)"
+          echo "chart_package=${CHART_PACKAGE}" >> "$GITHUB_OUTPUT"
+
+      - name: Resolve OCI namespace
+        id: oci
+        run: |
+          OWNER="$(printf '%s' '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')"
+          echo "registry=ghcr.io" >> "$GITHUB_OUTPUT"
+          echo "namespace=${OWNER}/charts" >> "$GITHUB_OUTPUT"
+
+      - name: Log in to GHCR for Helm OCI
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | helm registry login ${{ steps.oci.outputs.registry }} --username "${{ github.actor }}" --password-stdin
+
+      - name: Push chart to GHCR OCI
+        run: helm push "${{ steps.package.outputs.chart_package }}" "oci://${{ steps.oci.outputs.registry }}/${{ steps.oci.outputs.namespace }}"
 
       - name: Upload chart to GitHub Release
         uses: softprops/action-gh-release@v2

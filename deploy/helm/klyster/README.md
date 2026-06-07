@@ -4,10 +4,18 @@ This chart installs Klyster, a capacity planning and scaling recommendation plat
 
 ## Install
 
+From the GitHub Pages Helm repository:
+
 ```bash
 helm repo add klyster https://klyster.github.io/klyster
 helm repo update
 helm install klyster klyster/klyster --namespace klyster --create-namespace
+```
+
+From the GHCR OCI registry:
+
+```bash
+helm install klyster oci://ghcr.io/klyster/charts/klyster --namespace klyster --create-namespace
 ```
 
 For a local checkout:
@@ -92,4 +100,4 @@ serviceMonitor:
 
 ## Release
 
-Tagged releases package and publish the chart through the `helm-release.yml` workflow. The workflow publishes to GitHub Pages as an ordinary Helm repository.
+Tagged releases package and publish the chart through the `helm-release.yml` workflow. The workflow publishes to GitHub Pages as an ordinary Helm repository and to GHCR as a Helm OCI artifact.
