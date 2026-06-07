@@ -25,6 +25,15 @@ pub enum K8sProviderError {
     InvalidGroupId(String),
 }
 
+fn map_kube_get_error(err: kube::Error, resource: impl Into<String>) -> K8sProviderError {
+    match err {
+        kube::Error::Api(ref api_err) if api_err.code == 404 => {
+            K8sProviderError::NotFound(resource.into())
+        }
+        _ => K8sProviderError::ClientError(err.to_string()),
+    }
+}
+
 impl From<K8sClientError> for K8sProviderError {
     fn from(err: K8sClientError) -> Self {
         K8sProviderError::ClientError(err.to_string())
@@ -195,12 +204,10 @@ async fn deployment_capacity(
     name: &str,
 ) -> Result<Capacity, K8sProviderError> {
     let api: Api<Deployment> = Api::namespaced(client.clone(), namespace);
-    let dep = api.get(name).await.map_err(|e| match e {
-        kube::Error::Api(ref err) if err.code == 404 => {
-            K8sProviderError::NotFound(format!("deployment/{namespace}/{name}"))
-        }
-        _ => K8sProviderError::ClientError(e.to_string()),
-    })?;
+    let dep = api
+        .get(name)
+        .await
+        .map_err(|e| map_kube_get_error(e, format!("deployment/{namespace}/{name}")))?;
 
     let desired = dep
         .spec
@@ -211,7 +218,7 @@ async fn deployment_capacity(
     let current = dep
         .status
         .as_ref()
-        .and_then(|s| s.ready_replicas)
+        .and_then(|s| s.replicas)
         .and_then(|r| u32::try_from(r).ok())
         .unwrap_or(0);
 
@@ -229,12 +236,10 @@ async fn statefulset_capacity(
     name: &str,
 ) -> Result<Capacity, K8sProviderError> {
     let api: Api<StatefulSet> = Api::namespaced(client.clone(), namespace);
-    let ss = api.get(name).await.map_err(|e| match e {
-        kube::Error::Api(ref err) if err.code == 404 => {
-            K8sProviderError::NotFound(format!("statefulset/{namespace}/{name}"))
-        }
-        _ => K8sProviderError::ClientError(e.to_string()),
-    })?;
+    let ss = api
+        .get(name)
+        .await
+        .map_err(|e| map_kube_get_error(e, format!("statefulset/{namespace}/{name}")))?;
 
     let desired = ss
         .spec
@@ -245,7 +250,7 @@ async fn statefulset_capacity(
     let current = ss
         .status
         .as_ref()
-        .and_then(|s| s.ready_replicas)
+        .map(|s| s.replicas)
         .and_then(|r| u32::try_from(r).ok())
         .unwrap_or(0);
 
@@ -263,12 +268,10 @@ async fn daemonset_capacity(
     name: &str,
 ) -> Result<Capacity, K8sProviderError> {
     let api: Api<DaemonSet> = Api::namespaced(client.clone(), namespace);
-    let ds = api.get(name).await.map_err(|e| match e {
-        kube::Error::Api(ref err) if err.code == 404 => {
-            K8sProviderError::NotFound(format!("daemonset/{namespace}/{name}"))
-        }
-        _ => K8sProviderError::ClientError(e.to_string()),
-    })?;
+    let ds = api
+        .get(name)
+        .await
+        .map_err(|e| map_kube_get_error(e, format!("daemonset/{namespace}/{name}")))?;
 
     // DaemonSet capacity is the number of nodes it should run on.
     let desired = ds
@@ -291,4 +294,39 @@ async fn daemonset_capacity(
         min: desired,
         max: desired,
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn parse_group_id_accepts_supported_workloads() {
+        let deployment = parse_group_id("deployment/default/web").unwrap();
+        assert_eq!(deployment.kind, WorkloadKind::Deployment);
+        assert_eq!(deployment.namespace, "default");
+        assert_eq!(deployment.name, "web");
+
+        let statefulset = parse_group_id("statefulsets/data/postgres").unwrap();
+        assert_eq!(statefulset.kind, WorkloadKind::StatefulSet);
+
+        let daemonset = parse_group_id("DaemonSet/kube-system/fluentd").unwrap();
+        assert_eq!(daemonset.kind, WorkloadKind::DaemonSet);
+    }
+
+    #[test]
+    fn parse_group_id_rejects_invalid_shapes() {
+        assert!(matches!(
+            parse_group_id("default/web"),
+            Err(K8sProviderError::InvalidGroupId(_))
+        ));
+        assert!(matches!(
+            parse_group_id("deployment//web"),
+            Err(K8sProviderError::InvalidGroupId(_))
+        ));
+        assert!(matches!(
+            parse_group_id("job/default/batch"),
+            Err(K8sProviderError::InvalidGroupId(_))
+        ));
+    }
 }

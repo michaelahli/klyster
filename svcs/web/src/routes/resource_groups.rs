@@ -1,9 +1,9 @@
 //! Resource group CRUD endpoints.
 
 use crate::dto::resource_groups::{
-    CreateResourceGroupRequest, ResourceGroupDetailResponse, ResourceGroupListResponse,
-    ResourceGroupResponse, ResourceResponse, ScalingTargetResponse, SetScalingTargetRequest,
-    UpdateResourceGroupRequest,
+    CreateResourceGroupRequest, ResourceGroupCapacityResponse, ResourceGroupDetailResponse,
+    ResourceGroupListResponse, ResourceGroupResponse, ResourceResponse, ScalingTargetResponse,
+    SetScalingTargetRequest, UpdateResourceGroupRequest, WorkloadCapacityResponse,
 };
 use crate::error::{ApiError, ApiResult};
 use crate::state::AppState;
@@ -15,6 +15,8 @@ use axum::{
 use chrono::Utc;
 use db::repositories::ResourceRepository;
 use domain::models::{ResourceGroup, ScalingTarget};
+use domain::provider::kubernetes::{K8sProviderError, KubernetesProvider};
+use domain::provider::{Capacity, InfraProvider};
 use tracing::debug;
 
 /// Create a new resource group.
@@ -305,6 +307,129 @@ pub async fn list_resources(
     ))
 }
 
+/// Get current capacity for a resource group.
+///
+/// GET /api/v1/resource-groups/:id/capacity
+pub async fn get_capacity(
+    State(state): State<AppState>,
+    Path(id): Path<i64>,
+) -> ApiResult<Json<ResourceGroupCapacityResponse>> {
+    debug!(group_id = id, "Getting resource group capacity");
+
+    let repo = ResourceRepository::new(state.db());
+    let group = repo
+        .get_group(id)
+        .await?
+        .ok_or_else(|| ApiError::NotFound(format!("Resource group {id} not found")))?;
+
+    if group.provider_type != "kubernetes" {
+        return Err(ApiError::ValidationError(format!(
+            "Capacity is not supported for provider type '{}'",
+            group.provider_type
+        )));
+    }
+
+    if !state.config().kubernetes.enabled {
+        return Err(ApiError::ValidationError(
+            "Kubernetes integration is disabled".to_string(),
+        ));
+    }
+
+    let targets = capacity_targets(&group.provider_config)?;
+    let provider = KubernetesProvider::new(
+        state.config().kubernetes.kubeconfig_path.as_deref(),
+        state.config().kubernetes.namespaces.clone(),
+    )
+    .await
+    .map_err(provider_error_to_api)?;
+
+    let mut entries = Vec::with_capacity(targets.len());
+    let mut capacities = Vec::with_capacity(targets.len());
+    for target in targets {
+        let capacity = provider
+            .get_current_capacity(&target)
+            .await
+            .map_err(provider_error_to_api)?;
+        entries.push(WorkloadCapacityResponse::from_capacity(
+            target,
+            capacity.clone(),
+        ));
+        capacities.push(capacity);
+    }
+
+    let aggregate = aggregate_capacity(&capacities);
+    Ok(Json(ResourceGroupCapacityResponse::from_capacity(
+        id, aggregate, entries,
+    )))
+}
+
+fn capacity_targets(provider_config: &str) -> ApiResult<Vec<String>> {
+    let config: serde_json::Value = serde_json::from_str(provider_config)
+        .map_err(|e| ApiError::ValidationError(format!("Invalid provider config JSON: {e}")))?;
+
+    let targets = if let Some(targets) = config.get("capacity_targets").and_then(|v| v.as_array()) {
+        targets
+            .iter()
+            .map(|target| {
+                target.as_str().map(str::to_string).ok_or_else(|| {
+                    ApiError::ValidationError(
+                        "provider_config.capacity_targets must contain only strings".to_string(),
+                    )
+                })
+            })
+            .collect::<ApiResult<Vec<_>>>()?
+    } else if let Some(target) = config.get("capacity_target").and_then(|v| v.as_str()) {
+        vec![target.to_string()]
+    } else if let (Some(kind), Some(namespace), Some(name)) = (
+        config.get("kind").and_then(|v| v.as_str()),
+        config.get("namespace").and_then(|v| v.as_str()),
+        config.get("name").and_then(|v| v.as_str()),
+    ) {
+        vec![format!("{kind}/{namespace}/{name}")]
+    } else {
+        return Err(ApiError::ValidationError(
+            "provider_config must include capacity_target, capacity_targets, or kind/namespace/name"
+                .to_string(),
+        ));
+    };
+
+    if targets.is_empty() || targets.iter().any(|target| target.trim().is_empty()) {
+        return Err(ApiError::ValidationError(
+            "At least one non-empty capacity target is required".to_string(),
+        ));
+    }
+
+    Ok(targets)
+}
+
+fn aggregate_capacity(capacities: &[Capacity]) -> Capacity {
+    capacities.iter().fold(
+        Capacity {
+            current: 0,
+            desired: 0,
+            min: 0,
+            max: 0,
+        },
+        |mut aggregate, capacity| {
+            aggregate.current += capacity.current;
+            aggregate.desired += capacity.desired;
+            aggregate.min += capacity.min;
+            aggregate.max += capacity.max;
+            aggregate
+        },
+    )
+}
+
+fn provider_error_to_api(err: K8sProviderError) -> ApiError {
+    match err {
+        K8sProviderError::NotFound(msg) => ApiError::NotFound(msg),
+        K8sProviderError::InvalidGroupId(msg) | K8sProviderError::InvalidTarget(msg) => {
+            ApiError::ValidationError(msg)
+        }
+        K8sProviderError::ClientError(msg) => ApiError::Internal(msg),
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -571,5 +696,102 @@ mod tests {
         let result =
             set_scaling_target(State(state.clone()), Path(created.id), Json(target_req)).await;
         assert!(matches!(result, Err(ApiError::ValidationError(_))));
+    }
+
+    #[tokio::test]
+    async fn test_get_capacity_requires_existing_group() {
+        let state = setup_test_state().await;
+
+        let result = get_capacity(State(state), Path(999)).await;
+        assert!(matches!(result, Err(ApiError::NotFound(_))));
+    }
+
+    #[tokio::test]
+    async fn test_get_capacity_requires_kubernetes_enabled() {
+        let state = setup_test_state().await;
+        let req = CreateResourceGroupRequest {
+            name: "test-cluster".to_string(),
+            description: None,
+            provider_type: "kubernetes".to_string(),
+            provider_config: serde_json::json!({
+                "capacity_target": "deployment/default/web"
+            }),
+        };
+        let (_, created) = create_group(State(state.clone()), Json(req)).await.unwrap();
+
+        let result = get_capacity(State(state), Path(created.id)).await;
+        assert!(matches!(result, Err(ApiError::ValidationError(_))));
+    }
+
+    #[test]
+    fn test_capacity_targets_from_single_target() {
+        let config = serde_json::json!({
+            "capacity_target": "deployment/default/web"
+        });
+
+        let targets = capacity_targets(&config.to_string()).unwrap();
+        assert_eq!(targets, vec!["deployment/default/web"]);
+    }
+
+    #[test]
+    fn test_capacity_targets_from_multiple_targets() {
+        let config = serde_json::json!({
+            "capacity_targets": [
+                "deployment/default/web",
+                "statefulset/data/postgres"
+            ]
+        });
+
+        let targets = capacity_targets(&config.to_string()).unwrap();
+        assert_eq!(
+            targets,
+            vec![
+                "deployment/default/web".to_string(),
+                "statefulset/data/postgres".to_string()
+            ]
+        );
+    }
+
+    #[test]
+    fn test_capacity_targets_from_parts() {
+        let config = serde_json::json!({
+            "kind": "daemonset",
+            "namespace": "kube-system",
+            "name": "fluentd"
+        });
+
+        let targets = capacity_targets(&config.to_string()).unwrap();
+        assert_eq!(targets, vec!["daemonset/kube-system/fluentd"]);
+    }
+
+    #[test]
+    fn test_capacity_targets_rejects_missing_target() {
+        let config = serde_json::json!({});
+        let result = capacity_targets(&config.to_string());
+        assert!(matches!(result, Err(ApiError::ValidationError(_))));
+    }
+
+    #[test]
+    fn test_aggregate_capacity_sums_values_and_drift() {
+        let aggregate = aggregate_capacity(&[
+            Capacity {
+                current: 2,
+                desired: 3,
+                min: 1,
+                max: 5,
+            },
+            Capacity {
+                current: 4,
+                desired: 4,
+                min: 2,
+                max: 8,
+            },
+        ]);
+
+        assert_eq!(aggregate.current, 6);
+        assert_eq!(aggregate.desired, 7);
+        assert_eq!(aggregate.min, 3);
+        assert_eq!(aggregate.max, 13);
+        assert!(aggregate.has_drift());
     }
 }

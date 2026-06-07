@@ -71,6 +71,10 @@ pub fn build_router(state: AppState) -> Router {
         .route("/metrics/:name", get(metrics::query_metrics))
         .route("/resource-groups", post(resource_groups::create_group))
         .route("/resource-groups", get(resource_groups::list_groups))
+        .route(
+            "/resource-groups/:id/capacity",
+            get(resource_groups::get_capacity),
+        )
         .route("/resource-groups/:id", get(resource_groups::get_group))
         .route("/resource-groups/:id", put(resource_groups::update_group))
         .route(
@@ -230,6 +234,7 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
+    use db::migrate::run_migrations;
     use db::DatabasePool;
     use domain::config::{
         AgentConfig, AnalyticsConfig, DatabaseConfig, LoggingConfig, MetricsConfig,
@@ -274,6 +279,7 @@ mod tests {
     async fn test_state(port: u16) -> AppState {
         let config = test_config(port);
         let pool = DatabasePool::new(&config).await.unwrap();
+        run_migrations(&pool).await.unwrap();
         AppState::new(pool, Arc::new(config))
     }
 
@@ -423,5 +429,23 @@ mod tests {
         let json: serde_json::Value = serde_json::from_slice(&body).unwrap();
         assert_eq!(json["name"], "klyster");
         assert!(json["version"].is_string());
+    }
+
+    #[tokio::test]
+    async fn capacity_route_is_registered_before_group_detail_route() {
+        let state = test_state(0).await;
+        let router = build_router(state);
+
+        let response = router
+            .oneshot(
+                axum::http::Request::builder()
+                    .uri("/api/v1/resource-groups/999/capacity")
+                    .body(axum::body::Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(response.status(), StatusCode::NOT_FOUND);
     }
 }

@@ -1,5 +1,6 @@
 //! DTOs for resource group endpoints.
 
+use domain::provider::Capacity;
 use serde::{Deserialize, Serialize};
 
 /// Request to create a new resource group.
@@ -124,6 +125,77 @@ impl ResourceResponse {
             status: resource.status,
             created_at: resource.created_at.to_rfc3339(),
             updated_at: resource.updated_at.to_rfc3339(),
+        }
+    }
+}
+
+/// Capacity response for a resource group.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ResourceGroupCapacityResponse {
+    /// Resource group ID.
+    pub resource_group_id: i64,
+    /// Current ready/running capacity.
+    pub current: u32,
+    /// Desired capacity from provider spec/status.
+    pub desired: u32,
+    /// Minimum allowed capacity.
+    pub min: u32,
+    /// Maximum allowed capacity.
+    pub max: u32,
+    /// Whether current capacity differs from desired capacity.
+    pub drift: bool,
+    /// Per-workload capacity entries included in the aggregate.
+    pub targets: Vec<WorkloadCapacityResponse>,
+}
+
+impl ResourceGroupCapacityResponse {
+    /// Convert from aggregate capacity and per-workload capacities.
+    #[must_use]
+    pub fn from_capacity(
+        resource_group_id: i64,
+        capacity: Capacity,
+        targets: Vec<WorkloadCapacityResponse>,
+    ) -> Self {
+        Self {
+            resource_group_id,
+            current: capacity.current,
+            desired: capacity.desired,
+            min: capacity.min,
+            max: capacity.max,
+            drift: capacity.has_drift(),
+            targets,
+        }
+    }
+}
+
+/// Capacity response for a single workload target.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct WorkloadCapacityResponse {
+    /// Workload identifier, formatted as `kind/namespace/name`.
+    pub target: String,
+    /// Current ready/running capacity.
+    pub current: u32,
+    /// Desired capacity from provider spec/status.
+    pub desired: u32,
+    /// Minimum allowed capacity.
+    pub min: u32,
+    /// Maximum allowed capacity.
+    pub max: u32,
+    /// Whether current capacity differs from desired capacity.
+    pub drift: bool,
+}
+
+impl WorkloadCapacityResponse {
+    /// Convert from a target identifier and domain capacity.
+    #[must_use]
+    pub fn from_capacity(target: String, capacity: Capacity) -> Self {
+        Self {
+            target,
+            current: capacity.current,
+            desired: capacity.desired,
+            min: capacity.min,
+            max: capacity.max,
+            drift: capacity.has_drift(),
         }
     }
 }
