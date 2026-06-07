@@ -3,7 +3,8 @@
 use crate::k8s::{discovery::ResourceDiscovery, init_client, K8sClientError};
 use crate::models::Resource;
 use crate::provider::{Capacity, InfraProvider};
-use kube::Client;
+use k8s_openapi::api::apps::v1::{DaemonSet, Deployment, StatefulSet};
+use kube::{api::Api, Client};
 use std::sync::Arc;
 use tracing::{debug, warn};
 
@@ -19,6 +20,9 @@ pub enum K8sProviderError {
     /// Invalid scale target.
     #[error("Invalid scale target: {0}")]
     InvalidTarget(String),
+    /// Invalid group identifier.
+    #[error("Invalid group identifier: {0}")]
+    InvalidGroupId(String),
 }
 
 impl From<K8sClientError> for K8sProviderError {
@@ -88,15 +92,8 @@ impl InfraProvider for KubernetesProvider {
     async fn get_current_capacity(&self, group_id: &str) -> Result<Capacity, Self::Error> {
         debug!("Getting capacity for group: {}", group_id);
 
-        // TODO: Parse group_id to determine namespace/kind/name
-        // For now, placeholder implementation
-        warn!("get_current_capacity not yet implemented");
-
-        Ok(Capacity {
-            current: 0,
-            min: 0,
-            max: 10,
-        })
+        let target = parse_group_id(group_id)?;
+        capacity_for(&self.client, &target).await
     }
 
     async fn validate_scale_target(&self, group_id: &str, target: u32) -> Result<(), Self::Error> {
@@ -118,4 +115,180 @@ impl InfraProvider for KubernetesProvider {
     fn name(&self) -> &'static str {
         "kubernetes"
     }
+}
+
+/// Parsed identifier for a Kubernetes workload.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(crate) struct WorkloadTarget {
+    /// Workload kind (deployment, statefulset, daemonset).
+    pub kind: WorkloadKind,
+    /// Namespace.
+    pub namespace: String,
+    /// Workload name.
+    pub name: String,
+}
+
+/// Kubernetes workload kind supported for capacity reads.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum WorkloadKind {
+    /// `Deployment`
+    Deployment,
+    /// `StatefulSet`
+    StatefulSet,
+    /// `DaemonSet`
+    DaemonSet,
+}
+
+/// Parse a group identifier of the form `kind/namespace/name`.
+///
+/// Examples:
+/// - `deployment/default/web`
+/// - `statefulset/data/postgres`
+/// - `daemonset/kube-system/fluentd`
+pub(crate) fn parse_group_id(group_id: &str) -> Result<WorkloadTarget, K8sProviderError> {
+    let parts: Vec<&str> = group_id.split('/').collect();
+    if parts.len() != 3 || parts.iter().any(|p| p.is_empty()) {
+        return Err(K8sProviderError::InvalidGroupId(format!(
+            "expected `kind/namespace/name`, got: {group_id}"
+        )));
+    }
+
+    let kind = match parts[0].to_ascii_lowercase().as_str() {
+        "deployment" | "deployments" => WorkloadKind::Deployment,
+        "statefulset" | "statefulsets" => WorkloadKind::StatefulSet,
+        "daemonset" | "daemonsets" => WorkloadKind::DaemonSet,
+        other => {
+            return Err(K8sProviderError::InvalidGroupId(format!(
+                "unsupported kind `{other}`, expected one of: deployment, statefulset, daemonset"
+            )));
+        }
+    };
+
+    Ok(WorkloadTarget {
+        kind,
+        namespace: parts[1].to_string(),
+        name: parts[2].to_string(),
+    })
+}
+
+/// Read capacity for a single Kubernetes workload.
+pub(crate) async fn capacity_for(
+    client: &Client,
+    target: &WorkloadTarget,
+) -> Result<Capacity, K8sProviderError> {
+    match target.kind {
+        WorkloadKind::Deployment => {
+            deployment_capacity(client, &target.namespace, &target.name).await
+        }
+        WorkloadKind::StatefulSet => {
+            statefulset_capacity(client, &target.namespace, &target.name).await
+        }
+        WorkloadKind::DaemonSet => {
+            daemonset_capacity(client, &target.namespace, &target.name).await
+        }
+    }
+}
+
+async fn deployment_capacity(
+    client: &Client,
+    namespace: &str,
+    name: &str,
+) -> Result<Capacity, K8sProviderError> {
+    let api: Api<Deployment> = Api::namespaced(client.clone(), namespace);
+    let dep = api.get(name).await.map_err(|e| match e {
+        kube::Error::Api(ref err) if err.code == 404 => {
+            K8sProviderError::NotFound(format!("deployment/{namespace}/{name}"))
+        }
+        _ => K8sProviderError::ClientError(e.to_string()),
+    })?;
+
+    let desired = dep
+        .spec
+        .as_ref()
+        .and_then(|s| s.replicas)
+        .and_then(|r| u32::try_from(r).ok())
+        .unwrap_or(0);
+    let current = dep
+        .status
+        .as_ref()
+        .and_then(|s| s.ready_replicas)
+        .and_then(|r| u32::try_from(r).ok())
+        .unwrap_or(0);
+
+    Ok(Capacity {
+        current,
+        desired,
+        min: 0,
+        max: desired.max(current).max(1),
+    })
+}
+
+async fn statefulset_capacity(
+    client: &Client,
+    namespace: &str,
+    name: &str,
+) -> Result<Capacity, K8sProviderError> {
+    let api: Api<StatefulSet> = Api::namespaced(client.clone(), namespace);
+    let ss = api.get(name).await.map_err(|e| match e {
+        kube::Error::Api(ref err) if err.code == 404 => {
+            K8sProviderError::NotFound(format!("statefulset/{namespace}/{name}"))
+        }
+        _ => K8sProviderError::ClientError(e.to_string()),
+    })?;
+
+    let desired = ss
+        .spec
+        .as_ref()
+        .and_then(|s| s.replicas)
+        .and_then(|r| u32::try_from(r).ok())
+        .unwrap_or(0);
+    let current = ss
+        .status
+        .as_ref()
+        .and_then(|s| s.ready_replicas)
+        .and_then(|r| u32::try_from(r).ok())
+        .unwrap_or(0);
+
+    Ok(Capacity {
+        current,
+        desired,
+        min: 0,
+        max: desired.max(current).max(1),
+    })
+}
+
+async fn daemonset_capacity(
+    client: &Client,
+    namespace: &str,
+    name: &str,
+) -> Result<Capacity, K8sProviderError> {
+    let api: Api<DaemonSet> = Api::namespaced(client.clone(), namespace);
+    let ds = api.get(name).await.map_err(|e| match e {
+        kube::Error::Api(ref err) if err.code == 404 => {
+            K8sProviderError::NotFound(format!("daemonset/{namespace}/{name}"))
+        }
+        _ => K8sProviderError::ClientError(e.to_string()),
+    })?;
+
+    // DaemonSet capacity is the number of nodes it should run on.
+    let desired = ds
+        .status
+        .as_ref()
+        .map(|s| s.desired_number_scheduled)
+        .and_then(|r| u32::try_from(r).ok())
+        .unwrap_or(0);
+    let current = ds
+        .status
+        .as_ref()
+        .map(|s| s.number_ready)
+        .and_then(|r| u32::try_from(r).ok())
+        .unwrap_or(0);
+
+    Ok(Capacity {
+        current,
+        desired,
+        // DaemonSet is not user-scalable; min/max equal desired.
+        min: desired,
+        max: desired,
+    })
 }

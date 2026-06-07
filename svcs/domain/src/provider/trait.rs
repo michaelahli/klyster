@@ -6,12 +6,22 @@ use std::fmt;
 /// Capacity information for a resource group.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Capacity {
-    /// Current replica count or capacity units.
+    /// Current ready/running replica count.
     pub current: u32,
+    /// Desired replica count from spec.
+    pub desired: u32,
     /// Minimum allowed capacity.
     pub min: u32,
     /// Maximum allowed capacity.
     pub max: u32,
+}
+
+impl Capacity {
+    /// Returns true if the current capacity differs from desired.
+    #[must_use]
+    pub fn has_drift(&self) -> bool {
+        self.current != self.desired
+    }
 }
 
 /// Infrastructure provider abstraction.
@@ -40,8 +50,8 @@ impl fmt::Display for Capacity {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
-            "Capacity(current={}, min={}, max={})",
-            self.current, self.min, self.max
+            "Capacity(current={}, desired={}, min={}, max={})",
+            self.current, self.desired, self.min, self.max
         )
     }
 }
@@ -54,9 +64,35 @@ mod tests {
     fn test_capacity_display() {
         let cap = Capacity {
             current: 3,
+            desired: 3,
             min: 1,
             max: 10,
         };
-        assert_eq!(cap.to_string(), "Capacity(current=3, min=1, max=10)");
+        assert_eq!(
+            cap.to_string(),
+            "Capacity(current=3, desired=3, min=1, max=10)"
+        );
+    }
+
+    #[test]
+    fn test_capacity_no_drift() {
+        let cap = Capacity {
+            current: 5,
+            desired: 5,
+            min: 1,
+            max: 10,
+        };
+        assert!(!cap.has_drift());
+    }
+
+    #[test]
+    fn test_capacity_has_drift() {
+        let cap = Capacity {
+            current: 3,
+            desired: 5,
+            min: 1,
+            max: 10,
+        };
+        assert!(cap.has_drift());
     }
 }
