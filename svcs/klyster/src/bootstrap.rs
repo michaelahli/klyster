@@ -3,7 +3,11 @@
 use std::sync::Arc;
 use std::time::Duration;
 
+use db::repositories::ResourceRepository;
 use db::{run_migrations, DatabasePool};
+use domain::k8s::watcher::discovery_sync_interval;
+use domain::provider::kubernetes::KubernetesProvider;
+use domain::provider::InfraProvider;
 use domain::shutdown::ShutdownCoordinator;
 use domain::Config;
 use tracing::{error, info};
@@ -63,6 +67,24 @@ pub async fn bootstrap(
 
     // Start components as tokio tasks
     let mut handles = vec![];
+
+    if config.kubernetes.enabled {
+        info!("Starting Kubernetes discovery sync component");
+        let mut rx = shutdown_signal.subscribe();
+        let sync_config = Arc::clone(&config);
+        let sync_pool = pool.clone();
+        let handle = tokio::spawn(async move {
+            tokio::select! {
+                () = run_kubernetes_discovery_sync(sync_pool, sync_config) => {
+                    info!("Kubernetes discovery sync component stopped");
+                }
+                _ = rx.recv() => {
+                    info!("Kubernetes discovery sync component received shutdown signal");
+                }
+            }
+        });
+        handles.push(handle);
+    }
 
     if components.web {
         info!("Starting web component");
@@ -145,6 +167,56 @@ pub async fn bootstrap(
     pool.close().await;
 
     info!("Klyster application stopped");
+    Ok(())
+}
+
+async fn run_kubernetes_discovery_sync(pool: DatabasePool, config: Arc<Config>) {
+    let mut interval = discovery_sync_interval();
+
+    loop {
+        interval.tick().await;
+        if let Err(err) = sync_kubernetes_resources_once(&pool, &config).await {
+            error!(error = %err, "Kubernetes discovery sync failed");
+        }
+    }
+}
+
+async fn sync_kubernetes_resources_once(
+    pool: &DatabasePool,
+    config: &Config,
+) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    let repo = ResourceRepository::new(pool);
+    let groups = repo.list_groups().await?;
+    let kubernetes_groups: Vec<_> = groups
+        .into_iter()
+        .filter(|group| group.provider_type == "kubernetes")
+        .collect();
+
+    if kubernetes_groups.is_empty() {
+        info!("No Kubernetes resource groups configured for discovery sync");
+        return Ok(());
+    }
+
+    let provider = KubernetesProvider::new(
+        config.kubernetes.kubeconfig_path.as_deref(),
+        config.kubernetes.namespaces.clone(),
+    )
+    .await?;
+    let resources = provider.get_resources().await?;
+
+    for group in kubernetes_groups {
+        let summary = repo.sync_resources_for_group(group.id, &resources).await?;
+        info!(
+            group_id = group.id,
+            group_name = %group.name,
+            discovered = summary.discovered,
+            inserted = summary.inserted,
+            updated = summary.updated,
+            deleted = summary.deleted,
+            "Kubernetes resources synced"
+        );
+    }
+
     Ok(())
 }
 

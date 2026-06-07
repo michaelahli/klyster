@@ -10,6 +10,19 @@ pub struct ResourceRepository<'a> {
     pool: &'a DatabasePool,
 }
 
+/// Summary of a resource discovery sync.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct ResourceSyncSummary {
+    /// Number of resources returned by discovery.
+    pub discovered: usize,
+    /// Number of resources inserted.
+    pub inserted: usize,
+    /// Number of resources updated.
+    pub updated: usize,
+    /// Number of previously active resources marked deleted.
+    pub deleted: usize,
+}
+
 impl<'a> ResourceRepository<'a> {
     /// Create a new resource repository.
     #[must_use]
@@ -337,6 +350,79 @@ impl<'a> ResourceRepository<'a> {
         Ok(rows_affected)
     }
 
+    /// Sync discovered resources for a group.
+    ///
+    /// Inserts new resources, updates changed resources, and marks resources that
+    /// disappeared from discovery as deleted.
+    pub async fn sync_resources_for_group(
+        &self,
+        group_id: i64,
+        resources: &[Resource],
+    ) -> DbResult<ResourceSyncSummary> {
+        debug!(
+            group_id,
+            discovered = resources.len(),
+            "Syncing discovered resources"
+        );
+
+        let existing = self.list_by_group(group_id).await?;
+        let mut inserted = 0;
+        let mut updated = 0;
+        let mut deleted = 0;
+
+        for discovered in resources {
+            let existing_resource = existing.iter().find(|resource| {
+                resource.name == discovered.name && resource.namespace == discovered.namespace
+            });
+
+            let mut resource = discovered.clone();
+            resource.group_id = group_id;
+            resource.status = "active".to_string();
+
+            if let Some(existing) = existing_resource {
+                resource.id = existing.id;
+                resource.created_at = existing.created_at;
+                self.update_resource(&resource).await?;
+                updated += 1;
+            } else {
+                self.create_resource(&resource).await?;
+                inserted += 1;
+            }
+        }
+
+        for existing in existing
+            .iter()
+            .filter(|resource| resource.status != "deleted")
+        {
+            let still_present = resources.iter().any(|resource| {
+                resource.name == existing.name && resource.namespace == existing.namespace
+            });
+
+            if !still_present {
+                let mut resource = existing.clone();
+                resource.status = "deleted".to_string();
+                self.update_resource(&resource).await?;
+                deleted += 1;
+            }
+        }
+
+        let summary = ResourceSyncSummary {
+            discovered: resources.len(),
+            inserted,
+            updated,
+            deleted,
+        };
+        info!(
+            group_id,
+            discovered = summary.discovered,
+            inserted = summary.inserted,
+            updated = summary.updated,
+            deleted = summary.deleted,
+            "Resource sync completed"
+        );
+        Ok(summary)
+    }
+
     // Scaling Target operations
 
     /// Set a scaling target for a resource group.
@@ -566,6 +652,68 @@ mod tests {
         // Delete
         let rows = repo.delete_resource(id).await.unwrap();
         assert_eq!(rows, 1);
+
+        pool.close().await;
+    }
+
+    #[tokio::test]
+    async fn test_resource_sync_marks_missing_resources_deleted() {
+        let pool = setup_test_db().await;
+        let repo = ResourceRepository::new(&pool);
+
+        let now = Utc::now();
+        let group = ResourceGroup {
+            id: 0,
+            name: "sync-group".to_string(),
+            description: None,
+            provider_type: "kubernetes".to_string(),
+            provider_config: "{}".to_string(),
+            created_at: now,
+        };
+        let group_id = repo.create_group(&group).await.unwrap();
+
+        let resource = Resource {
+            id: 0,
+            group_id: 0,
+            name: "web".to_string(),
+            namespace: Some("default".to_string()),
+            kind: "deployment".to_string(),
+            labels: Some(r#"{"app":"web"}"#.to_string()),
+            status: "active".to_string(),
+            created_at: now,
+            updated_at: now,
+        };
+
+        let summary = repo
+            .sync_resources_for_group(group_id, std::slice::from_ref(&resource))
+            .await
+            .unwrap();
+        assert_eq!(summary.inserted, 1);
+        assert_eq!(summary.updated, 0);
+        assert_eq!(summary.deleted, 0);
+
+        let mut updated = resource.clone();
+        updated.labels = Some(r#"{"app":"web","tier":"api"}"#.to_string());
+        let summary = repo
+            .sync_resources_for_group(group_id, std::slice::from_ref(&updated))
+            .await
+            .unwrap();
+        assert_eq!(summary.inserted, 0);
+        assert_eq!(summary.updated, 1);
+        assert_eq!(summary.deleted, 0);
+
+        let resources = repo.list_by_group(group_id).await.unwrap();
+        assert_eq!(resources.len(), 1);
+        assert_eq!(resources[0].labels, updated.labels);
+        assert_eq!(resources[0].status, "active");
+
+        let summary = repo.sync_resources_for_group(group_id, &[]).await.unwrap();
+        assert_eq!(summary.inserted, 0);
+        assert_eq!(summary.updated, 0);
+        assert_eq!(summary.deleted, 1);
+
+        let resources = repo.list_by_group(group_id).await.unwrap();
+        assert_eq!(resources[0].status, "deleted");
 
         pool.close().await;
     }
