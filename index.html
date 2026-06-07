@@ -1,0 +1,251 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Klyster Helm Install</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      --bg: #f7f8fa;
+      --fg: #18202a;
+      --muted: #586272;
+      --panel: #ffffff;
+      --border: #d8dee8;
+      --accent: #0f766e;
+      --code-bg: #111827;
+      --code-fg: #f9fafb;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #101418;
+        --fg: #eef2f7;
+        --muted: #a9b4c2;
+        --panel: #171d24;
+        --border: #2c3642;
+        --accent: #2dd4bf;
+        --code-bg: #080b10;
+        --code-fg: #f8fafc;
+      }
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--fg);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.55;
+    }
+
+    main {
+      width: min(960px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 48px 0 72px;
+    }
+
+    header {
+      margin-bottom: 32px;
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: clamp(2rem, 5vw, 3.5rem);
+      line-height: 1.05;
+      letter-spacing: 0;
+    }
+
+    h2 {
+      margin: 40px 0 12px;
+      font-size: 1.45rem;
+      letter-spacing: 0;
+    }
+
+    h3 {
+      margin: 24px 0 8px;
+      font-size: 1.05rem;
+      letter-spacing: 0;
+    }
+
+    p, li {
+      color: var(--muted);
+    }
+
+    a {
+      color: var(--accent);
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 20px;
+      margin: 20px 0;
+    }
+
+    code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      font-size: 0.94em;
+    }
+
+    pre {
+      margin: 12px 0 0;
+      padding: 16px;
+      overflow-x: auto;
+      border-radius: 8px;
+      background: var(--code-bg);
+      color: var(--code-fg);
+    }
+
+    pre code {
+      color: inherit;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 12px;
+    }
+
+    .tag {
+      display: inline-block;
+      padding: 4px 8px;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      color: var(--muted);
+      font-size: 0.86rem;
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <span class="tag">Helm repository</span>
+      <h1>Klyster Kubernetes Install</h1>
+      <p>Install Klyster into your own Kubernetes cluster from the GitHub Pages Helm repository.</p>
+    </header>
+
+    <section class="panel">
+      <h2>Prerequisites</h2>
+      <div class="grid">
+        <p>Kubernetes cluster access through <code>kubectl</code>.</p>
+        <p>Helm 3 installed on the operator machine.</p>
+        <p>A namespace where Klyster can run.</p>
+        <p>External PostgreSQL for production or multi-replica deployments.</p>
+      </div>
+    </section>
+
+    <section>
+      <h2>Quick Install</h2>
+      <p>Add the Helm repository and install the default single-replica SQLite deployment.</p>
+      <pre><code>helm repo add klyster https://michaelahli.github.io/klyster
+helm repo update
+helm search repo klyster
+
+helm upgrade --install klyster klyster/klyster \
+  --namespace klyster \
+  --create-namespace</code></pre>
+    </section>
+
+    <section>
+      <h2>Verify The Deployment</h2>
+      <pre><code>kubectl -n klyster get pods
+kubectl -n klyster get svc
+helm -n klyster status klyster</code></pre>
+      <p>When ingress is not enabled, access the UI with a local port forward.</p>
+      <pre><code>kubectl -n klyster port-forward svc/klyster 8080:80
+open http://127.0.0.1:8080</code></pre>
+    </section>
+
+    <section>
+      <h2>Production Values</h2>
+      <p>Create a client-specific <code>klyster-values.yaml</code> file for PostgreSQL, ingress, image tags, Kubernetes namespace scope, and monitoring.</p>
+      <pre><code>replicaCount: 2
+
+image:
+  repository: ghcr.io/michaelahli/klyster
+  tag: "0.1.0"
+
+seer:
+  image:
+    repository: ghcr.io/michaelahli/klyster-seer
+    tag: "0.1.0"
+
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 1
+
+database:
+  type: postgres
+  poolSize: 20
+  postgres:
+    internal:
+      enabled: false
+    external:
+      host: postgres.example.com
+      port: 5432
+      database: klyster
+      username: klyster
+      existingSecret: klyster-postgres
+      existingSecretUrlKey: postgres-url
+
+ingress:
+  enabled: true
+  className: nginx
+  hosts:
+    - host: klyster.example.com
+      paths:
+        - path: /
+          pathType: Prefix
+
+rbac:
+  scope: namespace
+
+klyster:
+  kubernetes:
+    enabled: true
+    namespaces:
+      - production
+      - staging
+
+serviceMonitor:
+  enabled: true</code></pre>
+    </section>
+
+    <section>
+      <h2>External PostgreSQL Secret</h2>
+      <p>Create the PostgreSQL connection secret before installing with external PostgreSQL.</p>
+      <pre><code>kubectl create namespace klyster
+kubectl -n klyster create secret generic klyster-postgres \
+  --from-literal=postgres-url='postgresql://klyster:password@postgres.example.com:5432/klyster?sslmode=require'</code></pre>
+      <p>Then install with the values file.</p>
+      <pre><code>helm upgrade --install klyster klyster/klyster \
+  --namespace klyster \
+  --create-namespace \
+  -f klyster-values.yaml</code></pre>
+    </section>
+
+    <section>
+      <h2>Upgrade</h2>
+      <pre><code>helm repo update
+helm upgrade klyster klyster/klyster \
+  --namespace klyster \
+  -f klyster-values.yaml</code></pre>
+    </section>
+
+    <section>
+      <h2>Uninstall</h2>
+      <pre><code>helm uninstall klyster --namespace klyster</code></pre>
+    </section>
+
+    <section>
+      <h2>Repository Files</h2>
+      <p>Helm clients read <a href="./index.yaml">index.yaml</a> from this site. Chart packages are published next to it during each release.</p>
+    </section>
+  </main>
+</body>
+</html>
