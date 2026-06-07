@@ -18,6 +18,9 @@ jobs:
   publish:
     name: Package and Publish Helm Chart
     runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.pages-deployment.outputs.page_url }}
 
     steps:
       - name: Checkout code
@@ -93,3 +96,15 @@ jobs:
           publish_dir: gh-pages
           publish_branch: gh-pages
           keep_files: true
+
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload Helm repository as Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: gh-pages
+
+      - name: Deploy Helm repository to GitHub Pages
+        id: pages-deployment
+        uses: actions/deploy-pages@v4
