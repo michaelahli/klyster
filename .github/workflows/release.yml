@@ -22,11 +22,11 @@ jobs:
           - os: ubuntu-latest
             target: x86_64-unknown-linux-gnu
             artifact_name: klyster
-            asset_name: klyster-linux-amd64
+            platform: linux-amd64
           - os: macos-latest
             target: x86_64-apple-darwin
             artifact_name: klyster
-            asset_name: klyster-darwin-amd64
+            platform: darwin-amd64
 
     steps:
       - name: Checkout code
@@ -50,11 +50,14 @@ jobs:
       - name: Build release binary
         run: cargo build --release --target ${{ matrix.target }}
 
-      - name: Rename binary
-        run: cp ./target/${{ matrix.target }}/release/${{ matrix.artifact_name }} ./${{ matrix.asset_name }}
+      - name: Package release archive
+        id: package
+        run: |
+          ARCHIVE_PATH="$(scripts/build-tarball.sh ./target/${{ matrix.target }}/release/${{ matrix.artifact_name }} "${{ github.ref_name }}" "${{ matrix.platform }}")"
+          echo "archive_path=${ARCHIVE_PATH}" >> "$GITHUB_OUTPUT"
 
       - name: Generate checksum
-        run: shasum -a 256 ./${{ matrix.asset_name }} > ./${{ matrix.asset_name }}.sha256
+        run: shasum -a 256 "${{ steps.package.outputs.archive_path }}" > "${{ steps.package.outputs.archive_path }}.sha256"
 
       - name: Generate release notes
         if: matrix.os == 'ubuntu-latest'
@@ -65,8 +68,8 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            ./${{ matrix.asset_name }}
-            ./${{ matrix.asset_name }}.sha256
+            ${{ steps.package.outputs.archive_path }}
+            ${{ steps.package.outputs.archive_path }}.sha256
           draft: false
           prerelease: false
 
@@ -75,8 +78,8 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            ./${{ matrix.asset_name }}
-            ./${{ matrix.asset_name }}.sha256
+            ${{ steps.package.outputs.archive_path }}
+            ${{ steps.package.outputs.archive_path }}.sha256
           body_path: RELEASE_NOTES.md
           draft: false
           prerelease: false
