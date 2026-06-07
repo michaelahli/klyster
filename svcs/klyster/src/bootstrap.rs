@@ -65,92 +65,13 @@ pub async fn bootstrap(
     let shutdown = ShutdownCoordinator::default();
     let shutdown_signal = shutdown.signal();
 
-    // Start components as tokio tasks
-    let mut handles = vec![];
-
-    if config.kubernetes.enabled {
-        info!("Starting Kubernetes discovery sync component");
-        let mut rx = shutdown_signal.subscribe();
-        let sync_config = Arc::clone(&config);
-        let sync_pool = pool.clone();
-        let handle = tokio::spawn(async move {
-            tokio::select! {
-                () = run_kubernetes_discovery_sync(sync_pool, sync_config) => {
-                    info!("Kubernetes discovery sync component stopped");
-                }
-                _ = rx.recv() => {
-                    info!("Kubernetes discovery sync component received shutdown signal");
-                }
-            }
-        });
-        handles.push(handle);
-    }
-
-    if components.web {
-        info!("Starting web component");
-        let mut rx = shutdown_signal.subscribe();
-        let web_state = app_state.clone();
-        let handle = tokio::spawn(async move {
-            if let Err(e) = run_web_component(web_state, async move {
-                let _ = rx.recv().await;
-            })
-            .await
-            {
-                error!(error = %e, "Web component failed");
-            } else {
-                info!("Web component stopped");
-            }
-        });
-        handles.push(handle);
-    }
-
-    if components.agent {
-        info!("Starting agent component");
-        let mut rx = shutdown_signal.subscribe();
-        let handle = tokio::spawn(async move {
-            tokio::select! {
-                () = run_agent_component() => {
-                    info!("Agent component stopped");
-                }
-                _ = rx.recv() => {
-                    info!("Agent component received shutdown signal");
-                }
-            }
-        });
-        handles.push(handle);
-    }
-
-    if components.analytics {
-        info!("Starting analytics component");
-        let mut rx = shutdown_signal.subscribe();
-        let handle = tokio::spawn(async move {
-            tokio::select! {
-                () = run_analytics_component() => {
-                    info!("Analytics component stopped");
-                }
-                _ = rx.recv() => {
-                    info!("Analytics component received shutdown signal");
-                }
-            }
-        });
-        handles.push(handle);
-    }
-
-    if components.ui {
-        info!("Starting UI component");
-        let mut rx = shutdown_signal.subscribe();
-        let handle = tokio::spawn(async move {
-            tokio::select! {
-                () = run_ui_component() => {
-                    info!("UI component stopped");
-                }
-                _ = rx.recv() => {
-                    info!("UI component received shutdown signal");
-                }
-            }
-        });
-        handles.push(handle);
-    }
+    let handles = start_components(
+        &components,
+        &config,
+        &pool,
+        app_state.clone(),
+        &shutdown_signal,
+    );
 
     info!("All components started successfully");
 
@@ -168,6 +89,97 @@ pub async fn bootstrap(
 
     info!("Klyster application stopped");
     Ok(())
+}
+
+fn start_components(
+    components: &Components,
+    config: &Arc<Config>,
+    pool: &DatabasePool,
+    app_state: AppState,
+    shutdown_signal: &domain::shutdown::ShutdownSignal,
+) -> Vec<tokio::task::JoinHandle<()>> {
+    let mut handles = Vec::new();
+
+    if config.kubernetes.enabled {
+        info!("Starting Kubernetes discovery sync component");
+        let mut rx = shutdown_signal.subscribe();
+        let sync_config = Arc::clone(config);
+        let sync_pool = pool.clone();
+        handles.push(tokio::spawn(async move {
+            tokio::select! {
+                () = run_kubernetes_discovery_sync(sync_pool, sync_config) => {
+                    info!("Kubernetes discovery sync component stopped");
+                }
+                _ = rx.recv() => {
+                    info!("Kubernetes discovery sync component received shutdown signal");
+                }
+            }
+        }));
+    }
+
+    if components.web {
+        info!("Starting web component");
+        let mut rx = shutdown_signal.subscribe();
+        handles.push(tokio::spawn(async move {
+            if let Err(e) = run_web_component(app_state, async move {
+                let _ = rx.recv().await;
+            })
+            .await
+            {
+                error!(error = %e, "Web component failed");
+            } else {
+                info!("Web component stopped");
+            }
+        }));
+    }
+
+    if components.agent {
+        handles.push(start_loop_component(
+            "Agent",
+            run_agent_component(),
+            shutdown_signal,
+        ));
+    }
+
+    if components.analytics {
+        handles.push(start_loop_component(
+            "Analytics",
+            run_analytics_component(),
+            shutdown_signal,
+        ));
+    }
+
+    if components.ui {
+        handles.push(start_loop_component(
+            "UI",
+            run_ui_component(),
+            shutdown_signal,
+        ));
+    }
+
+    handles
+}
+
+fn start_loop_component<F>(
+    name: &'static str,
+    component: F,
+    shutdown_signal: &domain::shutdown::ShutdownSignal,
+) -> tokio::task::JoinHandle<()>
+where
+    F: std::future::Future<Output = ()> + Send + 'static,
+{
+    info!(component = name, "Starting component");
+    let mut rx = shutdown_signal.subscribe();
+    tokio::spawn(async move {
+        tokio::select! {
+            () = component => {
+                info!(component = name, "Component stopped");
+            }
+            _ = rx.recv() => {
+                info!(component = name, "Component received shutdown signal");
+            }
+        }
+    })
 }
 
 async fn run_kubernetes_discovery_sync(pool: DatabasePool, config: Arc<Config>) {

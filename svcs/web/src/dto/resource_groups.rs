@@ -153,7 +153,7 @@ impl ResourceGroupCapacityResponse {
     #[must_use]
     pub fn from_capacity(
         resource_group_id: i64,
-        capacity: Capacity,
+        capacity: &Capacity,
         targets: Vec<WorkloadCapacityResponse>,
     ) -> Self {
         Self {
@@ -188,7 +188,7 @@ pub struct WorkloadCapacityResponse {
 impl WorkloadCapacityResponse {
     /// Convert from a target identifier and domain capacity.
     #[must_use]
-    pub fn from_capacity(target: String, capacity: Capacity) -> Self {
+    pub fn from_capacity(target: String, capacity: &Capacity) -> Self {
         Self {
             target,
             current: capacity.current,

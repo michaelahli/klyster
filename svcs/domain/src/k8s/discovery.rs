@@ -4,7 +4,10 @@ use crate::models::{Resource, ResourceKind};
 use crate::provider::kubernetes::K8sProviderError;
 use chrono::Utc;
 use k8s_openapi::api::apps::v1::{DaemonSet, Deployment, StatefulSet};
-use kube::{api::Api, Client, ResourceExt};
+use kube::{
+    api::{Api, ListParams},
+    Client, ResourceExt,
+};
 use serde_json::Value;
 use tracing::{debug, info};
 
@@ -60,14 +63,14 @@ impl ResourceDiscovery {
     async fn discover_deployments(&self) -> Result<Vec<Resource>, K8sProviderError> {
         if self.namespaces.is_empty() {
             let api: Api<Deployment> = Api::all(self.client.clone());
-            let list = api.list(&Default::default()).await?;
+            let list = api.list(&ListParams::default()).await?;
             return Ok(list.iter().map(deployment_to_resource).collect());
         }
 
         let mut resources = Vec::new();
         for namespace in &self.namespaces {
             let api: Api<Deployment> = Api::namespaced(self.client.clone(), namespace);
-            let list = api.list(&Default::default()).await?;
+            let list = api.list(&ListParams::default()).await?;
             resources.extend(list.iter().map(deployment_to_resource));
         }
         Ok(resources)
@@ -76,14 +79,14 @@ impl ResourceDiscovery {
     async fn discover_statefulsets(&self) -> Result<Vec<Resource>, K8sProviderError> {
         if self.namespaces.is_empty() {
             let api: Api<StatefulSet> = Api::all(self.client.clone());
-            let list = api.list(&Default::default()).await?;
+            let list = api.list(&ListParams::default()).await?;
             return Ok(list.iter().map(statefulset_to_resource).collect());
         }
 
         let mut resources = Vec::new();
         for namespace in &self.namespaces {
             let api: Api<StatefulSet> = Api::namespaced(self.client.clone(), namespace);
-            let list = api.list(&Default::default()).await?;
+            let list = api.list(&ListParams::default()).await?;
             resources.extend(list.iter().map(statefulset_to_resource));
         }
         Ok(resources)
@@ -92,14 +95,14 @@ impl ResourceDiscovery {
     async fn discover_daemonsets(&self) -> Result<Vec<Resource>, K8sProviderError> {
         if self.namespaces.is_empty() {
             let api: Api<DaemonSet> = Api::all(self.client.clone());
-            let list = api.list(&Default::default()).await?;
+            let list = api.list(&ListParams::default()).await?;
             return Ok(list.iter().map(daemonset_to_resource).collect());
         }
 
         let mut resources = Vec::new();
         for namespace in &self.namespaces {
             let api: Api<DaemonSet> = Api::namespaced(self.client.clone(), namespace);
-            let list = api.list(&Default::default()).await?;
+            let list = api.list(&ListParams::default()).await?;
             resources.extend(list.iter().map(daemonset_to_resource));
         }
         Ok(resources)
@@ -111,7 +114,7 @@ fn deployment_to_resource(deployment: &Deployment) -> Resource {
         deployment.name_any(),
         deployment.namespace(),
         ResourceKind::Deployment,
-        labels_json(&deployment.labels()),
+        labels_json(deployment.labels()),
     )
 }
 
@@ -120,7 +123,7 @@ fn statefulset_to_resource(statefulset: &StatefulSet) -> Resource {
         statefulset.name_any(),
         statefulset.namespace(),
         ResourceKind::Statefulset,
-        labels_json(&statefulset.labels()),
+        labels_json(statefulset.labels()),
     )
 }
 
@@ -129,7 +132,7 @@ fn daemonset_to_resource(daemonset: &DaemonSet) -> Resource {
         daemonset.name_any(),
         daemonset.namespace(),
         ResourceKind::Daemonset,
-        labels_json(&daemonset.labels()),
+        labels_json(daemonset.labels()),
     )
 }
 

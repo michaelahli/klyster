@@ -25,9 +25,9 @@ pub enum K8sProviderError {
     InvalidGroupId(String),
 }
 
-fn map_kube_get_error(err: kube::Error, resource: impl Into<String>) -> K8sProviderError {
+fn map_kube_get_error(err: &kube::Error, resource: impl Into<String>) -> K8sProviderError {
     match err {
-        kube::Error::Api(ref api_err) if api_err.code == 404 => {
+        kube::Error::Api(api_err) if api_err.code == 404 => {
             K8sProviderError::NotFound(resource.into())
         }
         _ => K8sProviderError::ClientError(err.to_string()),
@@ -207,7 +207,7 @@ async fn deployment_capacity(
     let dep = api
         .get(name)
         .await
-        .map_err(|e| map_kube_get_error(e, format!("deployment/{namespace}/{name}")))?;
+        .map_err(|e| map_kube_get_error(&e, format!("deployment/{namespace}/{name}")))?;
 
     let desired = dep
         .spec
@@ -239,7 +239,7 @@ async fn statefulset_capacity(
     let ss = api
         .get(name)
         .await
-        .map_err(|e| map_kube_get_error(e, format!("statefulset/{namespace}/{name}")))?;
+        .map_err(|e| map_kube_get_error(&e, format!("statefulset/{namespace}/{name}")))?;
 
     let desired = ss
         .spec
@@ -271,7 +271,7 @@ async fn daemonset_capacity(
     let ds = api
         .get(name)
         .await
-        .map_err(|e| map_kube_get_error(e, format!("daemonset/{namespace}/{name}")))?;
+        .map_err(|e| map_kube_get_error(&e, format!("daemonset/{namespace}/{name}")))?;
 
     // DaemonSet capacity is the number of nodes it should run on.
     let desired = ds

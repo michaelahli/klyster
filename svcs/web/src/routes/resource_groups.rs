@@ -350,16 +350,13 @@ pub async fn get_capacity(
             .get_current_capacity(&target)
             .await
             .map_err(provider_error_to_api)?;
-        entries.push(WorkloadCapacityResponse::from_capacity(
-            target,
-            capacity.clone(),
-        ));
+        entries.push(WorkloadCapacityResponse::from_capacity(target, &capacity));
         capacities.push(capacity);
     }
 
     let aggregate = aggregate_capacity(&capacities);
     Ok(Json(ResourceGroupCapacityResponse::from_capacity(
-        id, aggregate, entries,
+        id, &aggregate, entries,
     )))
 }
 
