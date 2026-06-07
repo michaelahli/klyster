@@ -12,7 +12,10 @@ use domain::models::{
     Forecast, ForecastPoint, Recommendation, RecommendationAction, RecommendationStatus,
     ScalingTarget,
 };
-use domain::recommendation_engine::{evaluate, ForecastSummary, RecommendationPolicy};
+use domain::provider::Capacity;
+use domain::recommendation_engine::{
+    evaluate_capacity, ForecastSummary, RecommendationInput, RecommendationPolicy,
+};
 use thiserror::Error;
 use tracing::{debug, info, warn};
 
@@ -158,7 +161,20 @@ pub async fn persist(
     };
 
     let summary = build_summary(&points, context.current_replicas);
-    let draft = evaluate(&summary, target, context.policy);
+    let current = u32::try_from(context.current_replicas).unwrap_or(0);
+    let capacity = Capacity {
+        current,
+        desired: current,
+        min: u32::try_from(target.min_replicas).unwrap_or(0),
+        max: u32::try_from(target.max_replicas).unwrap_or(0),
+    };
+    let draft = evaluate_capacity(&RecommendationInput {
+        forecast: &summary,
+        capacity: &capacity,
+        target,
+        policy: context.policy,
+        forecast_confidence: forecast.confidence_score,
+    });
     debug!(
         forecast_id,
         action = draft.action.as_str(),
