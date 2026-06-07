@@ -1,0 +1,65 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "klyster.fullname" . }}
+  labels:
+    {{- include "klyster.labels" . | nindent 4 }}
+data:
+  klyster.toml: |
+    [database]
+    db_type = {{ .Values.database.type | quote }}
+    sqlite_path = {{ .Values.database.sqlite.path | quote }}
+    pool_size = {{ .Values.database.poolSize }}
+    wal_mode = {{ .Values.database.sqlite.walMode }}
+
+    [web]
+    host = "0.0.0.0"
+    port = {{ .Values.containerPort }}
+    {{- if .Values.klyster.web.workers }}
+    workers = {{ .Values.klyster.web.workers }}
+    {{- end }}
+
+    [agent]
+    enabled = {{ .Values.klyster.agent.enabled }}
+    collection_interval_secs = {{ .Values.klyster.agent.collectionIntervalSeconds }}
+
+    [agent.prometheus]
+    url = {{ .Values.klyster.agent.prometheus.url | quote }}
+    timeout_secs = {{ .Values.klyster.agent.prometheus.timeoutSeconds }}
+    collect_infrastructure = {{ .Values.klyster.agent.prometheus.collectInfrastructure }}
+    collect_kubernetes = {{ .Values.klyster.agent.prometheus.collectKubernetes }}
+    service_discovery_enabled = {{ .Values.klyster.agent.prometheus.serviceDiscoveryEnabled }}
+    service_discovery_refresh_secs = {{ .Values.klyster.agent.prometheus.serviceDiscoveryRefreshSeconds }}
+
+    [analytics]
+    enabled = {{ .Values.klyster.analytics.enabled }}
+    grpc_endpoint = {{ default (printf "http://127.0.0.1:%v" .Values.seer.port) .Values.klyster.analytics.grpcEndpoint | quote }}
+
+    [logging]
+    format = {{ .Values.klyster.logFormat | quote }}
+    level = {{ .Values.klyster.logLevel | quote }}
+
+    [[logging.outputs]]
+    type = "stdout"
+
+    [telemetry]
+    enabled = {{ .Values.klyster.telemetry.enabled }}
+    exporter = {{ .Values.klyster.telemetry.exporter | quote }}
+    endpoint = {{ .Values.klyster.telemetry.endpoint | quote }}
+    service_name = "klyster"
+    sample_rate = {{ .Values.klyster.telemetry.sampleRate }}
+
+    [metrics]
+    enabled = {{ .Values.klyster.metrics.enabled }}
+    endpoint = {{ .Values.klyster.metrics.endpoint | quote }}
+
+    [retention]
+    metrics_days = {{ .Values.klyster.retention.metricsDays }}
+    forecasts_days = {{ .Values.klyster.retention.forecastsDays }}
+    recommendations_days = {{ .Values.klyster.retention.recommendationsDays }}
+    audit_logs_days = {{ .Values.klyster.retention.auditLogsDays }}
+    cleanup_schedule = {{ .Values.klyster.retention.cleanupSchedule | quote }}
+
+    [kubernetes]
+    enabled = {{ .Values.klyster.kubernetes.enabled }}
+    namespaces = {{ .Values.klyster.kubernetes.namespaces | toJson }}

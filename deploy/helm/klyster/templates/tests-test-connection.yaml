@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: {{ include "klyster.fullname" . }}-test-connection
+  labels:
+    {{- include "klyster.labels" . | nindent 4 }}
+  annotations:
+    helm.sh/hook: test
+spec:
+  restartPolicy: Never
+  containers:
+    - name: curl
+      image: curlimages/curl:8.10.1
+      imagePullPolicy: IfNotPresent
+      command:
+        - sh
+        - -c
+        - curl --fail --silent --show-error http://{{ include "klyster.fullname" . }}:{{ .Values.service.port }}/healthz

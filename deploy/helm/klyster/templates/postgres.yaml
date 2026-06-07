@@ -1,0 +1,95 @@
+{{- if and (eq .Values.database.type "postgres") .Values.database.postgres.internal.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "klyster.postgresName" . }}
+  labels:
+    {{- include "klyster.labels" . | nindent 4 }}
+    app.kubernetes.io/component: postgres
+spec:
+  type: ClusterIP
+  ports:
+    - name: postgres
+      port: 5432
+      targetPort: postgres
+      protocol: TCP
+  selector:
+    {{- include "klyster.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: postgres
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "klyster.postgresName" . }}
+  labels:
+    {{- include "klyster.labels" . | nindent 4 }}
+    app.kubernetes.io/component: postgres
+spec:
+  serviceName: {{ include "klyster.postgresName" . }}
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "klyster.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: postgres
+  template:
+    metadata:
+      labels:
+        {{- include "klyster.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: postgres
+    spec:
+      containers:
+        - name: postgres
+          image: {{ printf "%s:%s" .Values.database.postgres.internal.image.repository .Values.database.postgres.internal.image.tag | quote }}
+          imagePullPolicy: {{ .Values.database.postgres.internal.image.pullPolicy }}
+          ports:
+            - name: postgres
+              containerPort: 5432
+              protocol: TCP
+          env:
+            - name: POSTGRES_USER
+              value: {{ .Values.database.postgres.internal.auth.username | quote }}
+            - name: POSTGRES_DB
+              value: {{ .Values.database.postgres.internal.auth.database | quote }}
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "klyster.postgresSecretName" . }}
+                  key: {{ .Values.database.postgres.internal.auth.existingSecretPasswordKey }}
+          livenessProbe:
+            exec:
+              command:
+                - pg_isready
+                - -U
+                - {{ .Values.database.postgres.internal.auth.username | quote }}
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 6
+          readinessProbe:
+            exec:
+              command:
+                - pg_isready
+                - -U
+                - {{ .Values.database.postgres.internal.auth.username | quote }}
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 6
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+          resources:
+            {{- toYaml .Values.database.postgres.internal.resources | nindent 12 }}
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: {{ .Values.database.postgres.internal.persistence.size }}
+        {{- if .Values.database.postgres.internal.persistence.storageClass }}
+        storageClassName: {{ .Values.database.postgres.internal.persistence.storageClass | quote }}
+        {{- end }}
+{{- end }}

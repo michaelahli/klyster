@@ -1,0 +1,43 @@
+replicaCount: 2
+
+database:
+  type: postgres
+  poolSize: 20
+  postgres:
+    internal:
+      enabled: false
+    external:
+      host: postgres.example.com
+      port: 5432
+      database: klyster
+      username: klyster
+      existingSecret: klyster-postgres
+      existingSecretUrlKey: postgres-url
+
+persistence:
+  enabled: false
+
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 1
+
+resources:
+  requests:
+    cpu: 250m
+    memory: 256Mi
+  limits:
+    memory: 512Mi
+
+seer:
+  resources:
+    requests:
+      cpu: 250m
+      memory: 512Mi
+    limits:
+      memory: 1Gi
+
+serviceMonitor:
+  enabled: true
+
+rbac:
+  scope: cluster

@@ -1,0 +1,183 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "klyster.fullname" . }}
+  labels:
+    {{- include "klyster.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "klyster.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "klyster.selectorLabels" . | nindent 8 }}
+        {{- with .Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        {{- with .Values.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      serviceAccountName: {{ include "klyster.serviceAccountName" . }}
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: klyster
+          image: {{ include "klyster.appImage" . | quote }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command:
+            - /app/klyster
+          args:
+            - --config
+            - /etc/klyster/klyster.toml
+            - --web
+          ports:
+            - name: http
+              containerPort: {{ .Values.containerPort }}
+              protocol: TCP
+          env:
+            {{- if eq .Values.database.type "postgres" }}
+            - name: KLYSTER_DATABASE_DB_TYPE
+              value: postgres
+            - name: KLYSTER_DATABASE_POSTGRES_URL
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "klyster.postgresSecretName" . }}
+                  key: {{ include "klyster.postgresUrlKey" . }}
+            {{- end }}
+            - name: KLYSTER_WEB_HOST
+              value: 0.0.0.0
+            - name: KLYSTER_WEB_PORT
+              value: {{ .Values.containerPort | quote }}
+            {{- if .Values.klyster.agent.prometheus.authTokenSecret.name }}
+            - name: KLYSTER_AGENT_PROMETHEUS_AUTH_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.klyster.agent.prometheus.authTokenSecret.name }}
+                  key: {{ .Values.klyster.agent.prometheus.authTokenSecret.key }}
+            {{- end }}
+            {{- with .Values.extraEnv }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          {{- with .Values.extraEnvFrom }}
+          envFrom:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          volumeMounts:
+            - name: config
+              mountPath: /etc/klyster
+              readOnly: true
+            - name: data
+              mountPath: /app/data
+            - name: tmp
+              mountPath: /tmp
+            {{- with .Values.extraVolumeMounts }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          {{- if .Values.livenessProbe.enabled }}
+          livenessProbe:
+            httpGet:
+              path: {{ .Values.livenessProbe.path }}
+              port: http
+            initialDelaySeconds: {{ .Values.livenessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.livenessProbe.periodSeconds }}
+            timeoutSeconds: {{ .Values.livenessProbe.timeoutSeconds }}
+            failureThreshold: {{ .Values.livenessProbe.failureThreshold }}
+          {{- end }}
+          {{- if .Values.readinessProbe.enabled }}
+          readinessProbe:
+            httpGet:
+              path: {{ .Values.readinessProbe.path }}
+              port: http
+            initialDelaySeconds: {{ .Values.readinessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.readinessProbe.periodSeconds }}
+            timeoutSeconds: {{ .Values.readinessProbe.timeoutSeconds }}
+            failureThreshold: {{ .Values.readinessProbe.failureThreshold }}
+          {{- end }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+        {{- if and .Values.seer.enabled .Values.klyster.analytics.enabled }}
+        - name: seer
+          image: {{ include "klyster.seerImage" . | quote }}
+          imagePullPolicy: {{ .Values.seer.image.pullPolicy }}
+          ports:
+            - name: grpc
+              containerPort: {{ .Values.seer.port }}
+              protocol: TCP
+          env:
+            - name: PYTHONUNBUFFERED
+              value: "1"
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+          {{- if .Values.seer.livenessProbe.enabled }}
+          livenessProbe:
+            exec:
+              command:
+                - python
+                - -c
+                - "import grpc; ch = grpc.insecure_channel('127.0.0.1:{{ .Values.seer.port }}'); grpc.channel_ready_future(ch).result(timeout=3)"
+            initialDelaySeconds: {{ .Values.seer.livenessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.seer.livenessProbe.periodSeconds }}
+            timeoutSeconds: {{ .Values.seer.livenessProbe.timeoutSeconds }}
+            failureThreshold: {{ .Values.seer.livenessProbe.failureThreshold }}
+          {{- end }}
+          {{- if .Values.seer.readinessProbe.enabled }}
+          readinessProbe:
+            exec:
+              command:
+                - python
+                - -c
+                - "import grpc; ch = grpc.insecure_channel('127.0.0.1:{{ .Values.seer.port }}'); grpc.channel_ready_future(ch).result(timeout=3)"
+            initialDelaySeconds: {{ .Values.seer.readinessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.seer.readinessProbe.periodSeconds }}
+            timeoutSeconds: {{ .Values.seer.readinessProbe.timeoutSeconds }}
+            failureThreshold: {{ .Values.seer.readinessProbe.failureThreshold }}
+          {{- end }}
+          resources:
+            {{- toYaml .Values.seer.resources | nindent 12 }}
+          securityContext:
+            {{- toYaml .Values.seer.securityContext | nindent 12 }}
+        {{- end }}
+      volumes:
+        - name: config
+          configMap:
+            name: {{ include "klyster.fullname" . }}
+        - name: data
+          {{- if .Values.persistence.enabled }}
+          persistentVolumeClaim:
+            claimName: {{ include "klyster.fullname" . }}-data
+          {{- else }}
+          emptyDir: {}
+          {{- end }}
+        - name: tmp
+          emptyDir: {}
+        {{- with .Values.extraVolumes }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.topologySpreadConstraints }}
+      topologySpreadConstraints:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

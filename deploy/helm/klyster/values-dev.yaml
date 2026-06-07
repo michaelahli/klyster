@@ -1,0 +1,16 @@
+database:
+  type: sqlite
+
+persistence:
+  enabled: false
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 96Mi
+
+seer:
+  resources:
+    requests:
+      cpu: 50m
+      memory: 192Mi

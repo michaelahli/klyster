@@ -1,0 +1,26 @@
+Klyster has been installed.
+
+Release: {{ .Release.Name }}
+Namespace: {{ .Release.Namespace }}
+Service: {{ include "klyster.fullname" . }}
+
+{{- if .Values.ingress.enabled }}
+Ingress hosts:
+{{- range .Values.ingress.hosts }}
+  - {{ .host }}
+{{- end }}
+{{- else }}
+Access locally:
+  kubectl -n {{ .Release.Namespace }} port-forward svc/{{ include "klyster.fullname" . }} 8080:{{ .Values.service.port }}
+  open http://127.0.0.1:8080
+{{- end }}
+
+Health endpoints:
+  /healthz
+  /readyz
+
+Metrics endpoint:
+  {{ .Values.klyster.metrics.endpoint }}
+
+Run chart test:
+  helm test {{ .Release.Name }} -n {{ .Release.Namespace }}

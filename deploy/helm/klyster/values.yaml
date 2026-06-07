@@ -1,0 +1,228 @@
+replicaCount: 1
+
+image:
+  repository: ghcr.io/klyster/klyster
+  tag: ""
+  pullPolicy: IfNotPresent
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  create: true
+  annotations: {}
+  name: ""
+
+podAnnotations: {}
+podLabels: {}
+
+podSecurityContext:
+  fsGroup: 1000
+
+securityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - ALL
+  readOnlyRootFilesystem: true
+  runAsNonRoot: true
+  runAsUser: 1000
+
+service:
+  type: ClusterIP
+  port: 80
+  targetPort: 8080
+  annotations: {}
+
+containerPort: 8080
+
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+  hosts:
+    - host: klyster.local
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits: {}
+
+nodeSelector: {}
+tolerations: []
+affinity: {}
+
+topologySpreadConstraints: []
+
+podDisruptionBudget:
+  enabled: false
+  minAvailable: 1
+
+persistence:
+  enabled: false
+  accessModes:
+    - ReadWriteOnce
+  size: 10Gi
+  storageClass: ""
+  annotations: {}
+
+klyster:
+  logLevel: info
+  logFormat: json
+  web:
+    workers: ""
+  analytics:
+    enabled: true
+    grpcEndpoint: ""
+  agent:
+    enabled: false
+    collectionIntervalSeconds: 60
+    prometheus:
+      url: http://prometheus-server:9090
+      timeoutSeconds: 30
+      collectInfrastructure: true
+      collectKubernetes: true
+      serviceDiscoveryEnabled: true
+      serviceDiscoveryRefreshSeconds: 300
+      authTokenSecret:
+        name: ""
+        key: token
+  telemetry:
+    enabled: false
+    exporter: otlp
+    endpoint: http://otel-collector:4317
+    sampleRate: 1.0
+  metrics:
+    enabled: true
+    endpoint: /metrics
+  retention:
+    metricsDays: 90
+    forecastsDays: 180
+    recommendationsDays: 365
+    auditLogsDays: 365
+    cleanupSchedule: "0 2 * * *"
+  kubernetes:
+    enabled: true
+    namespaces: []
+
+extraEnv: []
+extraEnvFrom: []
+extraVolumes: []
+extraVolumeMounts: []
+
+seer:
+  enabled: true
+  image:
+    repository: ghcr.io/klyster/klyster-seer
+    tag: ""
+    pullPolicy: IfNotPresent
+  port: 50051
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits: {}
+  securityContext:
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
+    readOnlyRootFilesystem: true
+    runAsNonRoot: true
+    runAsUser: 1000
+  livenessProbe:
+    enabled: true
+    initialDelaySeconds: 20
+    periodSeconds: 30
+    timeoutSeconds: 5
+    failureThreshold: 3
+  readinessProbe:
+    enabled: true
+    initialDelaySeconds: 10
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 3
+
+livenessProbe:
+  enabled: true
+  path: /healthz
+  initialDelaySeconds: 15
+  periodSeconds: 30
+  timeoutSeconds: 5
+  failureThreshold: 3
+
+readinessProbe:
+  enabled: true
+  path: /readyz
+  initialDelaySeconds: 5
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 3
+
+serviceMonitor:
+  enabled: false
+  namespace: ""
+  labels: {}
+  annotations: {}
+  interval: 30s
+  scrapeTimeout: 10s
+  path: /metrics
+
+rbac:
+  create: true
+  scope: cluster
+  rules:
+    workloads: true
+    pods: true
+
+networkPolicy:
+  enabled: false
+  ingress: []
+  egress: []
+
+database:
+  type: sqlite
+  poolSize: 10
+  sqlite:
+    path: /app/data/klyster.db
+    walMode: true
+  postgres:
+    internal:
+      enabled: false
+      image:
+        repository: postgres
+        tag: 16-alpine
+        pullPolicy: IfNotPresent
+      auth:
+        username: klyster
+        password: ""
+        database: klyster
+        existingSecret: ""
+        existingSecretPasswordKey: password
+        existingSecretUrlKey: postgres-url
+      persistence:
+        enabled: true
+        size: 10Gi
+        storageClass: ""
+      resources:
+        requests:
+          cpu: 100m
+          memory: 256Mi
+        limits: {}
+      external:
+        host: ""
+        port: 5432
+        database: klyster
+        username: klyster
+        password: ""
+        existingSecret: ""
+        existingSecretPasswordKey: password
+        existingSecretUrlKey: postgres-url
+        sslMode: prefer
+

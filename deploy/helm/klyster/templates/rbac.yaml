@@ -1,0 +1,96 @@
+{{- if and .Values.rbac.create .Values.klyster.kubernetes.enabled }}
+{{- if eq .Values.rbac.scope "cluster" }}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ include "klyster.fullname" . }}
+  labels:
+    {{- include "klyster.labels" . | nindent 4 }}
+rules:
+  {{- if .Values.rbac.rules.workloads }}
+  - apiGroups:
+      - apps
+    resources:
+      - deployments
+      - statefulsets
+      - daemonsets
+    verbs:
+      - get
+      - list
+      - watch
+  {{- end }}
+  {{- if .Values.rbac.rules.pods }}
+  - apiGroups:
+      - ""
+    resources:
+      - pods
+      - nodes
+    verbs:
+      - get
+      - list
+      - watch
+  {{- end }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ include "klyster.fullname" . }}
+  labels:
+    {{- include "klyster.labels" . | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: {{ include "klyster.fullname" . }}
+subjects:
+  - kind: ServiceAccount
+    name: {{ include "klyster.serviceAccountName" . }}
+    namespace: {{ .Release.Namespace }}
+{{- else if eq .Values.rbac.scope "namespace" }}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ include "klyster.fullname" . }}
+  labels:
+    {{- include "klyster.labels" . | nindent 4 }}
+rules:
+  {{- if .Values.rbac.rules.workloads }}
+  - apiGroups:
+      - apps
+    resources:
+      - deployments
+      - statefulsets
+      - daemonsets
+    verbs:
+      - get
+      - list
+      - watch
+  {{- end }}
+  {{- if .Values.rbac.rules.pods }}
+  - apiGroups:
+      - ""
+    resources:
+      - pods
+    verbs:
+      - get
+      - list
+      - watch
+  {{- end }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ include "klyster.fullname" . }}
+  labels:
+    {{- include "klyster.labels" . | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: {{ include "klyster.fullname" . }}
+subjects:
+  - kind: ServiceAccount
+    name: {{ include "klyster.serviceAccountName" . }}
+    namespace: {{ .Release.Namespace }}
+{{- else }}
+{{- fail "rbac.scope must be either cluster or namespace" }}
+{{- end }}
+{{- end }}

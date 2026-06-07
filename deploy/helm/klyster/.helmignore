@@ -1,0 +1,11 @@
+.DS_Store
+.git/
+.gitignore
+.github/
+*.swp
+*.tmp
+*.bak
+*.orig
+README.md
+values-dev.yaml
+values-prod.yaml
