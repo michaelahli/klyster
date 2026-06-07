@@ -19,6 +19,8 @@ pub enum ResourceKind {
     Deployment,
     /// Kubernetes statefulset
     Statefulset,
+    /// Kubernetes daemonset
+    Daemonset,
 }
 
 impl ResourceKind {
@@ -31,6 +33,7 @@ impl ResourceKind {
             ResourceKind::Node => "node",
             ResourceKind::Deployment => "deployment",
             ResourceKind::Statefulset => "statefulset",
+            ResourceKind::Daemonset => "daemonset",
         }
     }
 }
@@ -45,6 +48,7 @@ impl FromStr for ResourceKind {
             "node" => Ok(ResourceKind::Node),
             "deployment" => Ok(ResourceKind::Deployment),
             "statefulset" => Ok(ResourceKind::Statefulset),
+            "daemonset" => Ok(ResourceKind::Daemonset),
             _ => Err(format!("Invalid resource kind: {s}")),
         }
     }
@@ -150,6 +154,7 @@ mod tests {
         assert_eq!(ResourceKind::Node.as_str(), "node");
         assert_eq!(ResourceKind::Deployment.as_str(), "deployment");
         assert_eq!(ResourceKind::Statefulset.as_str(), "statefulset");
+        assert_eq!(ResourceKind::Daemonset.as_str(), "daemonset");
     }
 
     #[test]
@@ -164,6 +169,10 @@ mod tests {
         assert_eq!(
             "statefulset".parse::<ResourceKind>().unwrap(),
             ResourceKind::Statefulset
+        );
+        assert_eq!(
+            "daemonset".parse::<ResourceKind>().unwrap(),
+            ResourceKind::Daemonset
         );
         assert!("invalid".parse::<ResourceKind>().is_err());
     }
