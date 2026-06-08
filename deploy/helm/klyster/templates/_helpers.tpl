@@ -69,17 +69,17 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 
 {{- define "klyster.postgresPasswordKey" -}}
 {{- if .Values.database.postgres.internal.enabled -}}
-{{- .Values.database.postgres.internal.auth.existingSecretPasswordKey -}}
+{{- default "password" .Values.database.postgres.internal.auth.existingSecretPasswordKey -}}
 {{- else -}}
-{{- .Values.database.postgres.external.existingSecretPasswordKey -}}
+{{- default "password" .Values.database.postgres.external.existingSecretPasswordKey -}}
 {{- end -}}
 {{- end -}}
 
 {{- define "klyster.postgresUrlKey" -}}
 {{- if .Values.database.postgres.internal.enabled -}}
-{{- .Values.database.postgres.internal.auth.existingSecretUrlKey -}}
+{{- default "postgres-url" .Values.database.postgres.internal.auth.existingSecretUrlKey -}}
 {{- else -}}
-{{- .Values.database.postgres.external.existingSecretUrlKey -}}
+{{- default "postgres-url" .Values.database.postgres.external.existingSecretUrlKey -}}
 {{- end -}}
 {{- end -}}
 
