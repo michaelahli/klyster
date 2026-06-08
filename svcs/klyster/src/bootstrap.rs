@@ -3,7 +3,8 @@
 use std::sync::Arc;
 use std::time::Duration;
 
-use db::repositories::ResourceRepository;
+use agent::prometheus::{CollectorConfig, CustomQuery, MetricCollector, PrometheusAdapter, PrometheusClient, PrometheusConfig};
+use db::repositories::{MetricSourceRepository, ResourceRepository};
 use db::{run_migrations, DatabasePool};
 use domain::k8s::watcher::discovery_sync_interval;
 use domain::provider::kubernetes::KubernetesProvider;
@@ -134,11 +135,20 @@ fn start_components(
     }
 
     if components.agent {
-        handles.push(start_loop_component(
-            "Agent",
-            run_agent_component(),
-            shutdown_signal,
-        ));
+        info!(enabled = config.agent.enabled, "Starting agent component");
+        let agent_pool = pool.clone();
+        let agent_config = Arc::clone(config);
+        let mut rx = shutdown_signal.subscribe();
+        handles.push(tokio::spawn(async move {
+            tokio::select! {
+                () = run_agent_component(agent_pool, agent_config) => {
+                    info!("Agent component stopped");
+                }
+                _ = rx.recv() => {
+                    info!("Agent component received shutdown signal");
+                }
+            }
+        }));
     }
 
     if components.analytics {
@@ -245,16 +255,101 @@ where
     Ok(())
 }
 
-/// Run agent component - collects metrics from all configured sources.
-async fn run_agent_component() {
-    info!("Agent component starting - metrics collection enabled");
-
-    // TODO: Implement full agent with dynamic source loading
-    // For now, placeholder - will be implemented in phases
-    loop {
-        tokio::time::sleep(tokio::time::Duration::from_secs(60)).await;
-        info!("Agent tick - collection cycle");
+/// Run agent component - collects metrics from configured Prometheus source.
+async fn run_agent_component(
+    pool: DatabasePool,
+    config: Arc<Config>,
+) {
+    if !config.agent.enabled {
+        info!("Agent component disabled in configuration");
+        return;
     }
+
+    info!("Agent component starting - Prometheus collection enabled");
+
+    let prom_config = PrometheusConfig {
+        url: config.agent.prometheus.url.clone(),
+        timeout: Duration::from_secs(config.agent.prometheus.timeout_secs),
+        auth_token: config.agent.prometheus.auth_token.clone(),
+    };
+
+    let client = match PrometheusClient::new(prom_config) {
+        Ok(client) => client,
+        Err(error) => {
+            error!(error = %error, "Failed to create Prometheus client");
+            return;
+        }
+    };
+
+    if let Err(error) = client.health_check().await {
+        error!(error = %error, "Prometheus health check failed");
+        return;
+    }
+
+    let source_id = match ensure_default_prometheus_source(&pool, &config).await {
+        Ok(source_id) => source_id,
+        Err(error) => {
+            error!(error = %error, "Failed to ensure default Prometheus source");
+            return;
+        }
+    };
+
+    let custom_queries = config
+        .agent
+        .prometheus
+        .custom_queries
+        .iter()
+        .map(|query| CustomQuery {
+            name: query.name.clone(),
+            query: query.query.clone(),
+        })
+        .collect();
+
+    let collector_config = CollectorConfig {
+        interval: Duration::from_secs(config.agent.collection_interval_secs),
+        collect_infrastructure: config.agent.prometheus.collect_infrastructure,
+        collect_kubernetes: config.agent.prometheus.collect_kubernetes,
+        custom_queries,
+    };
+
+    let adapter = PrometheusAdapter::new(client, source_id);
+    let collector = MetricCollector::new(adapter, pool, collector_config);
+
+    let (shutdown_tx, shutdown_rx) = tokio::sync::broadcast::channel(1);
+    let _shutdown_guard = shutdown_tx;
+    collector.run(shutdown_rx).await;
+}
+
+async fn ensure_default_prometheus_source(
+    pool: &DatabasePool,
+    config: &Config,
+) -> Result<i64, db::DbError> {
+    let repo = MetricSourceRepository::new(pool);
+    let source_name = "default-prometheus";
+    let source_type = "prometheus";
+    let source_config = serde_json::json!({
+        "url": config.agent.prometheus.url,
+        "timeout_secs": config.agent.prometheus.timeout_secs,
+        "collect_infrastructure": config.agent.prometheus.collect_infrastructure,
+        "collect_kubernetes": config.agent.prometheus.collect_kubernetes,
+        "service_discovery_enabled": config.agent.prometheus.service_discovery_enabled,
+        "service_discovery_refresh_secs": config.agent.prometheus.service_discovery_refresh_secs,
+    })
+    .to_string();
+
+    if let Some(existing) = repo.get_by_name(source_name).await? {
+        if existing.source_type == source_type && existing.config == source_config {
+            return Ok(existing.id);
+        }
+
+        let updated = repo
+            .update(existing.id, source_name, source_type, &source_config)
+            .await?;
+        return Ok(updated.id);
+    }
+
+    let created = repo.create(source_name, source_type, &source_config).await?;
+    Ok(created.id)
 }
 
 /// Run analytics component (placeholder).

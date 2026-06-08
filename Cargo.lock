@@ -1753,6 +1753,7 @@ dependencies = [
  "clap",
  "db",
  "domain",
+ "serde_json",
  "tokio",
  "tracing",
  "web",
