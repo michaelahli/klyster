@@ -127,13 +127,14 @@ impl CommonQueries {
     /// CPU usage percentage (0-100) per instance.
     #[must_use]
     pub fn cpu_usage() -> String {
-        "100 * (1 - avg by(instance) (rate(node_cpu_seconds_total{mode=\"idle\"}[5m])))".to_string()
+        "sum by(namespace, pod) (rate(container_cpu_usage_seconds_total{container!=\"\",pod!=\"\"}[5m]))"
+            .to_string()
     }
 
     /// CPU usage percentage aggregated across all instances.
     #[must_use]
     pub fn cpu_usage_total() -> String {
-        "100 * (1 - avg(rate(node_cpu_seconds_total{mode=\"idle\"}[5m])))".to_string()
+        "sum(rate(container_cpu_usage_seconds_total{container!=\"\",pod!=\"\"}[5m]))".to_string()
     }
 
     /// Memory usage percentage per instance.
@@ -289,8 +290,9 @@ mod tests {
     #[test]
     fn test_cpu_usage_query() {
         let query = CommonQueries::cpu_usage();
-        assert!(query.contains("node_cpu_seconds_total"));
-        assert!(query.contains("mode=\"idle\""));
+        assert!(query.contains("container_cpu_usage_seconds_total"));
+        assert!(query.contains("container!=\"\""));
+        assert!(query.contains("pod!=\"\""));
         assert!(query.contains("rate"));
     }
 
