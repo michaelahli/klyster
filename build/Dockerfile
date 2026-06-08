@@ -1,5 +1,5 @@
 # Multi-stage build for Klyster
-FROM rust:1.90-slim as builder
+FROM rust:1.90-bookworm AS builder
 
 WORKDIR /build
 
