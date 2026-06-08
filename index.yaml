@@ -5,8 +5,34 @@ entries:
       artifacthub.io/category: monitoring-logging
       artifacthub.io/license: MIT
     apiVersion: v2
+    appVersion: 0.1.5
+    created: "2026-06-08T14:55:54.758013937Z"
+    description: Capacity planning and scaling recommendation platform for Kubernetes
+      workloads.
+    digest: 0df7e097ce5691dce5a054482b0c3f82d8bb3f4b21a7ab51ae353417ecc7f9c7
+    home: https://github.com/klyster/klyster
+    keywords:
+    - capacity-planning
+    - kubernetes
+    - prometheus
+    - forecasting
+    kubeVersion: '>=1.25.0-0'
+    maintainers:
+    - name: Klyster Contributors
+      url: https://github.com/klyster/klyster
+    name: klyster
+    sources:
+    - https://github.com/klyster/klyster
+    type: application
+    urls:
+    - https://michaelahli.github.io/klyster/klyster-0.1.5.tgz
+    version: 0.1.5
+  - annotations:
+      artifacthub.io/category: monitoring-logging
+      artifacthub.io/license: MIT
+    apiVersion: v2
     appVersion: 0.1.4
-    created: "2026-06-08T14:27:11.014208333Z"
+    created: "2026-06-08T14:55:54.757106446Z"
     description: Capacity planning and scaling recommendation platform for Kubernetes
       workloads.
     digest: c43b39d6783e6387662ff18f93942bb7a605f779cc84148dfe64fd992dc141c0
@@ -32,7 +58,7 @@ entries:
       artifacthub.io/license: MIT
     apiVersion: v2
     appVersion: 0.1.2
-    created: "2026-06-08T14:27:11.013326748Z"
+    created: "2026-06-08T14:55:54.756194147Z"
     description: Capacity planning and scaling recommendation platform for Kubernetes
       workloads.
     digest: e09572f0874dcb1a695adcc940eaf3a69274bdaddf81ec006bb39aa2245d2eef
@@ -58,7 +84,7 @@ entries:
       artifacthub.io/license: MIT
     apiVersion: v2
     appVersion: 0.1.1
-    created: "2026-06-08T14:27:11.012451424Z"
+    created: "2026-06-08T14:55:54.75527774Z"
     description: Capacity planning and scaling recommendation platform for Kubernetes
       workloads.
     digest: 37151a2ed96fb34db3e0290c9c8ff22ca1203c517975f733227bb6a92fbd366b
@@ -84,7 +110,7 @@ entries:
       artifacthub.io/license: MIT
     apiVersion: v2
     appVersion: 0.1.0
-    created: "2026-06-08T14:27:11.01157557Z"
+    created: "2026-06-08T14:55:54.754296611Z"
     description: Capacity planning and scaling recommendation platform for Kubernetes
       workloads.
     digest: 6efe1f372cd98f3d0ea620b8aaad55f8de84bd4349427549f885d2f384de75fb
@@ -105,4 +131,4 @@ entries:
     urls:
     - https://michaelahli.github.io/klyster/klyster-0.1.0.tgz
     version: 0.1.0
-generated: "2026-06-08T14:27:11.010545788Z"
+generated: "2026-06-08T14:55:54.752934839Z"
