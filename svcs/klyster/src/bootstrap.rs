@@ -3,7 +3,10 @@
 use std::sync::Arc;
 use std::time::Duration;
 
-use agent::prometheus::{CollectorConfig, CustomQuery, MetricCollector, PrometheusAdapter, PrometheusClient, PrometheusConfig};
+use agent::prometheus::{
+    CollectorConfig, CustomQuery, MetricCollector, PrometheusAdapter, PrometheusClient,
+    PrometheusConfig,
+};
 use db::repositories::{MetricSourceRepository, ResourceRepository};
 use db::{run_migrations, DatabasePool};
 use domain::k8s::watcher::discovery_sync_interval;
@@ -256,10 +259,7 @@ where
 }
 
 /// Run agent component - collects metrics from configured Prometheus source.
-async fn run_agent_component(
-    pool: DatabasePool,
-    config: Arc<Config>,
-) {
+async fn run_agent_component(pool: DatabasePool, config: Arc<Config>) {
     if !config.agent.enabled {
         info!("Agent component disabled in configuration");
         return;
@@ -348,7 +348,9 @@ async fn ensure_default_prometheus_source(
         return Ok(updated.id);
     }
 
-    let created = repo.create(source_name, source_type, &source_config).await?;
+    let created = repo
+        .create(source_name, source_type, &source_config)
+        .await?;
     Ok(created.id)
 }
 

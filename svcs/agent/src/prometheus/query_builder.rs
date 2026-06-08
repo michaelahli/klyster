@@ -127,20 +127,13 @@ impl CommonQueries {
     /// CPU usage percentage (0-100) per instance.
     #[must_use]
     pub fn cpu_usage() -> String {
-        QueryBuilder::new("node_cpu_seconds_total")
-            .with_label("mode", "idle")
-            .rate("5m")
-            .build()
+        "100 * (1 - avg by(instance) (rate(node_cpu_seconds_total{mode=\"idle\"}[5m])))".to_string()
     }
 
     /// CPU usage percentage aggregated across all instances.
     #[must_use]
     pub fn cpu_usage_total() -> String {
-        QueryBuilder::new("node_cpu_seconds_total")
-            .with_label("mode", "idle")
-            .rate("5m")
-            .aggregate(Aggregation::Avg)
-            .build()
+        "100 * (1 - avg(rate(node_cpu_seconds_total{mode=\"idle\"}[5m])))".to_string()
     }
 
     /// Memory usage percentage per instance.
