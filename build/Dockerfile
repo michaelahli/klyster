@@ -1,43 +1,43 @@
-# Multi-stage build for Klyster
-FROM rust:1.90-bookworm AS builder
+# Multi-stage build for Klyster (Alpine-based)
+FROM rust:1.90-alpine3.20 AS builder
 
 WORKDIR /build
 
-# Install build dependencies (protoc is required by tonic-build for the analytics crate)
-# Node.js is required for building Tailwind CSS
-RUN apt-get update && apt-get install -y \
-    pkg-config \
-    libssl-dev \
-    protobuf-compiler \
-    curl \
-    && curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
-    && apt-get install -y nodejs \
-    && rm -rf /var/lib/apt/lists/*
+# Install build dependencies:
+# - protoc: required by tonic-build for the analytics crate
+# - musl-dev: required for static linking
+# - nodejs/npm: required for building Tailwind CSS
+RUN apk add --no-cache \
+    protobuf-dev \
+    musl-dev \
+    openssl-dev \
+    openssl-libs-static \
+    nodejs \
+    npm
 
 # Copy workspace files
 COPY Cargo.toml Cargo.lock ./
 COPY svcs ./svcs
 COPY proto ./proto
 
-# Build release binary
+# Build release binary (statically linked against musl)
 RUN cargo build --release --bin klyster
 
-# Runtime stage
-FROM debian:bookworm-slim
+# Runtime stage: minimal Alpine
+FROM alpine:3.20
 
 WORKDIR /app
 
-# Install runtime dependencies
-RUN apt-get update && apt-get install -y \
+# Install only what's needed at runtime
+RUN apk add --no-cache \
     ca-certificates \
-    curl \
-    && rm -rf /var/lib/apt/lists/*
+    curl
 
 # Create non-root user
-RUN useradd -m -u 1000 klyster && \
+RUN adduser -D -u 1000 klyster && \
     chown -R klyster:klyster /app
 
-# Copy binary from builder
+# Copy statically-linked binary from builder
 COPY --from=builder /build/target/release/klyster /app/klyster
 
 # Copy default config
