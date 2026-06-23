@@ -1,28 +1,25 @@
 # Multi-stage build for Klyster Seer (Python analytics sidecar)
+# Strategy: builder installs runtime deps into isolated prefix, then
+# copies only the installed packages to runtime. No build-essential
+# needed because all wheels are prebuilt for manylinux/glibc.
+# Builder also handles proto codegen (needs grpcio-tools).
 FROM python:3.11-slim AS builder
 
 WORKDIR /build
 
-# Install build dependencies for compiled wheels (numpy, pandas, statsmodels, pmdarima)
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential \
-    gcc \
-    g++ \
-    gfortran \
-    libopenblas-dev \
-    liblapack-dev \
-    && rm -rf /var/lib/apt/lists/*
+# Install runtime deps into isolated prefix (no source compiles)
+# --prefix installs to a clean tree, avoiding mixing with system Python
+COPY svcs/seer/requirements.runtime.txt ./requirements.txt
+RUN pip install --no-cache-dir --only-binary :all: --prefix=/install -r requirements.txt
 
-# Install dependencies into an isolated prefix so we can copy them to the runtime stage
-COPY svcs/seer/requirements.txt ./requirements.txt
-RUN pip install --no-cache-dir --prefix=/install -r requirements.txt
+# Install grpcio-tools for proto codegen (not shipped to runtime)
+RUN pip install --no-cache-dir --only-binary :all: --prefix=/install grpcio-tools>=1.60.0
 
 # Copy proto definition and seer source
 COPY proto /build/proto
 COPY svcs/seer /build/seer
 
-# Generate Python gRPC bindings from the proto file (uses base-image python
-# with PYTHONPATH pointing at the prefix-installed grpcio_tools)
+# Generate Python gRPC bindings
 RUN PYTHONPATH=/install/lib/python3.11/site-packages \
     python -m grpc_tools.protoc \
         -I/build/proto \
@@ -33,16 +30,20 @@ RUN PYTHONPATH=/install/lib/python3.11/site-packages \
     && sed -i 's/^import analytics_pb2 as analytics__pb2$/from seer import analytics_pb2 as analytics__pb2/' \
         /build/seer/analytics_pb2_grpc.py
 
+# Remove grpcio-tools (codegen only, not needed at runtime)
+RUN rm -rf /install/lib/python3.11/site-packages/grpc_tools* \
+    && find /install -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true \
+    && find /install -type f -name '*.pyc' -delete 2>/dev/null || true
+
 # Runtime stage
 FROM python:3.11-slim
 
 WORKDIR /app
 
-# Runtime libraries required by numpy/scipy/statsmodels
+# Runtime shared libraries needed by numpy/scipy
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libopenblas0 \
     liblapack3 \
-    libgomp1 \
     && rm -rf /var/lib/apt/lists/*
 
 # Create non-root user
@@ -50,8 +51,13 @@ RUN useradd -m -u 1000 seer && \
     mkdir -p /var/run/klyster && \
     chown -R seer:seer /app /var/run/klyster
 
-# Copy installed dependencies from builder
+# Copy installed dependencies from builder (merges into /usr/local)
 COPY --from=builder /install /usr/local
+
+# Remove grpcio-tools from runtime (only needed for codegen in builder)
+RUN rm -rf /usr/local/lib/python3.11/site-packages/grpc_tools* \
+    && find /usr/local -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true \
+    && find /usr/local -type f -name '*.pyc' -delete 2>/dev/null || true
 
 # Copy server sources (with generated proto code)
 COPY --from=builder /build/seer /app/seer
