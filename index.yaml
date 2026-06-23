@@ -5,8 +5,34 @@ entries:
       artifacthub.io/category: monitoring-logging
       artifacthub.io/license: MIT
     apiVersion: v2
+    appVersion: 0.1.9
+    created: "2026-06-23T16:27:41.809976237Z"
+    description: Capacity planning and scaling recommendation platform for Kubernetes
+      workloads.
+    digest: e0db53598bbc019bd880c7cabfda16348db052a7881fa79ac57d39b286eb1320
+    home: https://github.com/klyster/klyster
+    keywords:
+    - capacity-planning
+    - kubernetes
+    - prometheus
+    - forecasting
+    kubeVersion: '>=1.25.0-0'
+    maintainers:
+    - name: Klyster Contributors
+      url: https://github.com/klyster/klyster
+    name: klyster
+    sources:
+    - https://github.com/klyster/klyster
+    type: application
+    urls:
+    - https://michaelahli.github.io/klyster/klyster-0.1.9.tgz
+    version: 0.1.9
+  - annotations:
+      artifacthub.io/category: monitoring-logging
+      artifacthub.io/license: MIT
+    apiVersion: v2
     appVersion: 0.1.8
-    created: "2026-06-23T16:10:32.055586819Z"
+    created: "2026-06-23T16:27:41.809082561Z"
     description: Capacity planning and scaling recommendation platform for Kubernetes
       workloads.
     digest: 34a3135147fc68f4d3432b3bae014d6f26624300d0dc4b41b235ad660512ad65
@@ -32,7 +58,7 @@ entries:
       artifacthub.io/license: MIT
     apiVersion: v2
     appVersion: 0.1.7
-    created: "2026-06-23T16:10:32.054690456Z"
+    created: "2026-06-23T16:27:41.808185749Z"
     description: Capacity planning and scaling recommendation platform for Kubernetes
       workloads.
     digest: dae50f68d1a9e2b1a2fb9bd6002aac78e7af1396818b9b01d79525af66167391
@@ -58,7 +84,7 @@ entries:
       artifacthub.io/license: MIT
     apiVersion: v2
     appVersion: 0.1.6
-    created: "2026-06-23T16:10:32.053075359Z"
+    created: "2026-06-23T16:27:41.806490815Z"
     description: Capacity planning and scaling recommendation platform for Kubernetes
       workloads.
     digest: f8f16634dae5b668a5113de25d5a93e5415cb25967b058d1c10c682394d4d00b
@@ -84,7 +110,7 @@ entries:
       artifacthub.io/license: MIT
     apiVersion: v2
     appVersion: 0.1.5
-    created: "2026-06-23T16:10:32.052216968Z"
+    created: "2026-06-23T16:27:41.805625101Z"
     description: Capacity planning and scaling recommendation platform for Kubernetes
       workloads.
     digest: 0df7e097ce5691dce5a054482b0c3f82d8bb3f4b21a7ab51ae353417ecc7f9c7
@@ -110,7 +136,7 @@ entries:
       artifacthub.io/license: MIT
     apiVersion: v2
     appVersion: 0.1.4
-    created: "2026-06-23T16:10:32.051372413Z"
+    created: "2026-06-23T16:27:41.804755641Z"
     description: Capacity planning and scaling recommendation platform for Kubernetes
       workloads.
     digest: c43b39d6783e6387662ff18f93942bb7a605f779cc84148dfe64fd992dc141c0
@@ -136,7 +162,7 @@ entries:
       artifacthub.io/license: MIT
     apiVersion: v2
     appVersion: 0.1.2
-    created: "2026-06-23T16:10:32.050516968Z"
+    created: "2026-06-23T16:27:41.803884828Z"
     description: Capacity planning and scaling recommendation platform for Kubernetes
       workloads.
     digest: e09572f0874dcb1a695adcc940eaf3a69274bdaddf81ec006bb39aa2245d2eef
@@ -162,7 +188,7 @@ entries:
       artifacthub.io/license: MIT
     apiVersion: v2
     appVersion: 0.1.1
-    created: "2026-06-23T16:10:32.049658496Z"
+    created: "2026-06-23T16:27:41.802986152Z"
     description: Capacity planning and scaling recommendation platform for Kubernetes
       workloads.
     digest: 37151a2ed96fb34db3e0290c9c8ff22ca1203c517975f733227bb6a92fbd366b
@@ -188,7 +214,7 @@ entries:
       artifacthub.io/license: MIT
     apiVersion: v2
     appVersion: 0.1.0
-    created: "2026-06-23T16:10:32.048811026Z"
+    created: "2026-06-23T16:27:41.802143463Z"
     description: Capacity planning and scaling recommendation platform for Kubernetes
       workloads.
     digest: 6efe1f372cd98f3d0ea620b8aaad55f8de84bd4349427549f885d2f384de75fb
@@ -209,4 +235,4 @@ entries:
     urls:
     - https://michaelahli.github.io/klyster/klyster-0.1.0.tgz
     version: 0.1.0
-generated: "2026-06-23T16:10:32.047789297Z"
+generated: "2026-06-23T16:27:41.801098511Z"
